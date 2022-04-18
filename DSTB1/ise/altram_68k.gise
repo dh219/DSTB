@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<generated_project xmlns="http://www.xilinx.com/XMLSchema" xmlns:xil_pn="http://www.xilinx.com/XMLSchema">
+
+  <!--                                                          -->
+
+  <!--             For tool use only. Do not edit.              -->
+
+  <!--                                                          -->
+
+  <!-- ProjectNavigator created generated project file.         -->
+
+  <!-- For use in tracking generated file and other information -->
+
+  <!-- allowing preservation of process status.                 -->
+
+  <!--                                                          -->
+
+  <!-- Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved. -->
+
+  <version xmlns="http://www.xilinx.com/XMLSchema">11.1</version>
+
+  <sourceproject xmlns="http://www.xilinx.com/XMLSchema" xil_pn:fileType="FILE_XISE" xil_pn:name="altram_68k.xise"/>
+
+  <files xmlns="http://www.xilinx.com/XMLSchema">
+    <file xil_pn:fileType="FILE_DIRECTORY" xil_pn:name="_ngo"/>
+    <file xil_pn:fileType="FILE_XMSGS" xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
+    <file xil_pn:fileType="FILE_XMSGS" xil_pn:name="_xmsgs/xst.xmsgs"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGDBUILD_LOG" xil_pn:name="altram_68k.bld"/>
+    <file xil_pn:fileType="FILE_CMD_LOG" xil_pn:name="altram_68k.cmd_log"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_GYD" xil_pn:name="altram_68k.gyd"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_JEDEC" xil_pn:name="altram_68k.jed"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_LSO" xil_pn:name="altram_68k.lso"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_MFD" xil_pn:name="altram_68k.mfd"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGA" xil_pn:name="altram_68k.nga"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGC" xil_pn:name="altram_68k.ngc"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGD" xil_pn:name="altram_68k.ngd"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGR" xil_pn:name="altram_68k.ngr"/>
+    <file xil_pn:fileType="FILE_PAD_MISC" xil_pn:name="altram_68k.pad"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_PNX" xil_pn:name="altram_68k.pnx"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="altram_68k.prj"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.rpt"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_STX" xil_pn:name="altram_68k.stx"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_REPORT" xil_pn:name="altram_68k.syr"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.tim"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_VM6" xil_pn:name="altram_68k.vm6"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.xml"/>
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST" xil_pn:name="altram_68k.xst"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k_build.xml"/>
+    <file xil_pn:fileType="FILE_HTML" xil_pn:name="altram_68k_envsettings.html"/>
+    <file xil_pn:fileType="FILE_XRPT" xil_pn:name="altram_68k_ngdbuild.xrpt"/>
+    <file xil_pn:fileType="FILE_PAD_EXCEL_REPORT" xil_pn:name="altram_68k_pad.csv"/>
+    <file xil_pn:fileType="FILE_HTML" xil_pn:name="altram_68k_summary.html"/>
+    <file xil_pn:fileType="FILE_XRPT" xil_pn:name="altram_68k_xst.xrpt"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="webtalk_pn.xml"/>
+    <file xil_pn:fileType="FILE_DIRECTORY" xil_pn:name="xlnx_auto_0_xdb"/>
+    <file xil_pn:fileType="FILE_DIRECTORY" xil_pn:name="xst"/>
+  </files>
+
+  <transforms xmlns="http://www.xilinx.com/XMLSchema">
+    <transform xil_pn:end_ts="1646694594" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1646694594">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1646694594" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-8395994415392068288" xil_pn:start_ts="1646694594">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1649971005" xil_pn:in_ck="-701195565247016892" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="-5649762932161676278" xil_pn:start_ts="1649971000">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name="_xmsgs/xst.xmsgs"/>
+      <outfile xil_pn:name="altram_68k.lso"/>
+      <outfile xil_pn:name="altram_68k.ngc"/>
+      <outfile xil_pn:name="altram_68k.ngr"/>
+      <outfile xil_pn:name="altram_68k.prj"/>
+      <outfile xil_pn:name="altram_68k.stx"/>
+      <outfile xil_pn:name="altram_68k.syr"/>
+      <outfile xil_pn:name="altram_68k.xst"/>
+      <outfile xil_pn:name="altram_68k_xst.xrpt"/>
+      <outfile xil_pn:name="webtalk_pn.xml"/>
+      <outfile xil_pn:name="xst"/>
+    </transform>
+    <transform xil_pn:end_ts="1649971203" xil_pn:in_ck="-8934673440187800603" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="8767104413774596379" xil_pn:start_ts="1649971203">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1649971207" xil_pn:in_ck="-7294396204703951676" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="1893441463969615248" xil_pn:start_ts="1649971203">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name="_ngo"/>
+      <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
+      <outfile xil_pn:name="altram_68k.bld"/>
+      <outfile xil_pn:name="altram_68k.ngd"/>
+      <outfile xil_pn:name="altram_68k_ngdbuild.xrpt"/>
+    </transform>
+    <transform xil_pn:end_ts="1649971212" xil_pn:in_ck="-8934673440187808096" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="4947420855286448381" xil_pn:start_ts="1649971207">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForProperties"/>
+      <outfile xil_pn:name="altram_68k.gyd"/>
+      <outfile xil_pn:name="altram_68k.mfd"/>
+      <outfile xil_pn:name="altram_68k.nga"/>
+      <outfile xil_pn:name="altram_68k.pad"/>
+      <outfile xil_pn:name="altram_68k.pnx"/>
+      <outfile xil_pn:name="altram_68k.rpt"/>
+      <outfile xil_pn:name="altram_68k.tim"/>
+      <outfile xil_pn:name="altram_68k.vm6"/>
+      <outfile xil_pn:name="altram_68k.xml"/>
+      <outfile xil_pn:name="altram_68k_build.xml"/>
+      <outfile xil_pn:name="altram_68k_pad.csv"/>
+    </transform>
+    <transform xil_pn:end_ts="1649971214" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1649971212">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <outfile xil_pn:name="altram_68k.jed"/>
+    </transform>
+    <transform xil_pn:end_ts="1646694609" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1646694607">
+      <status xil_pn:value="AbortedRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <status xil_pn:value="InputChanged"/>
+    </transform>
+  </transforms>
+
+</generated_project>

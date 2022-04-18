@@ -1,0 +1,15 @@
+Comment,Designator,Footprint,LCSC Part #
+100n Unpolarized capacitor,"C1,C3,C5,C7,C9",C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,
+10u Unpolarized capacitor,"C4,C8,C10",C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,
+LED Light emitting diode,D1,LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,
+IS42S16320D-7TL ,IC1,TSOP-II-54_22.2x10.16mm_P0.8mm,
+"SN74CB3T3245PW Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC","IC2,IC3",TSSOP-20_4.4x6.5mm_P0.65mm,C7145
+"Conn_01x06_Male Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)",J1,PinHeader_1x06_P2.54mm_Horizontal,
+1k Resistor,R1,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,
+2k2 Resistor,R2,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,
+"3k3 4 resistor network, parallel topology","RN1,RN2,RN3,RN4,RN5,RN6,RN7,RN8,RN9,RN10,RN11",R_Array_Convex_4x0603,
+68000D 16/32-bit Microprocessor,U1,DIP-64_W22.86mm,
+68000D 16/32-bit Microprocessor,U2,DIP-64_W22.86mm_Socket,
+"XC95144XL-TQ100 CPLD, 144 Macrocells, 3200 Usable Gates",U3,TQFP-100_14x14mm_P0.5mm,
+"LT1129-3.3_SOT223 700mA Micropower Low drop-out regulator, Fixed Output 3.3V, SOT-223",U4,SOT-223-3_TabPin2,
+"IQXO-70 Crystal Clock Oscillator, SMD package 7.5x5.0mm²",X1,Oscillator_SMD_IQD_IQXO70-4Pin_7.5x5.0mm,
