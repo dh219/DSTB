@@ -1,5 +1,8 @@
 `timescale 1ns / 1ps
 
+/* DAVID'S ST BOOSTER v 1 (DSTB1) 				*/
+/* Copyright 2022 D Henderson 						*/
+/* Released under the terms of the GPLv2 	*/
 
 module nouveau_sdram(
 	input CLK,
