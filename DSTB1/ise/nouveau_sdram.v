@@ -51,6 +51,32 @@ wire PRECHARGE = 		COUNTER[13:3] == 11'd1024; // x1 precharge command
 wire AUTO_REFRESH = 	COUNTER[13:3] == 11'd1030 || COUNTER == 11'd1036;
 wire LOAD_MODE = 		COUNTER[13:3] == 11'd1042;
 
+localparam [3:0] STATE_IDLE = 'd0;
+localparam [3:0] STATE_READ = 'd1;
+localparam [3:0] STATE_WRITE = 'd2;
+localparam [3:0] STATE_CLOSE	= 'd3;
+localparam [3:0] STATE_ACCESS_WAIT = 'd4;
+localparam [3:0] STATE_REFRESH = 'd5;
+localparam [3:0] STATE_REFRESH_NOP1 = 'd6;
+localparam [3:0] STATE_REFRESH_NOP2 = 'd7;
+localparam [3:0] STATE_REFRESH_NOP3 = 'd8;
+localparam [3:0] STATE_REFRESH_NOP4 = 'd9;
+localparam [3:0] STATE_REFRESH_NOP5 = 'd10;
+localparam [3:0] STATE_REFRESH_NOP6 = 'd11;
+localparam [3:0] STATE_REFRESH_NOP7 = 'd12;
+localparam [3:0] STATE_REFRESH_NOP8 = 'd13;
+
+localparam [3:0] STATE_READ_HOLD = 'd14;
+localparam [3:0] STATE_WRITE_HOLD = 'd15;
+
+
+reg [3:0] state=0;
+reg [1:0] refresh_wait = 2'b00;
+reg [1:0] BA_IN;
+reg [1:0] DQM_IN;
+
+FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( CMD == CMD_REFRESH ), .Q( refresh_req ) );
+
 // indicate refresh needed and do initialisation
 always @(negedge CLK or negedge RST)  begin
 
@@ -86,35 +112,7 @@ always @(negedge CLK or negedge RST)  begin
 	end	
 end
 
-FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( CMD == CMD_REFRESH ), .Q( refresh_req ) );
-
-localparam [3:0] STATE_IDLE = 'd0;
-localparam [3:0] STATE_READ = 'd1;
-localparam [3:0] STATE_WRITE = 'd2;
-localparam [3:0] STATE_CLOSE	= 'd3;
-localparam [3:0] STATE_ACCESS_WAIT = 'd4;
-localparam [3:0] STATE_REFRESH = 'd5;
-localparam [3:0] STATE_REFRESH_NOP1 = 'd6;
-localparam [3:0] STATE_REFRESH_NOP2 = 'd7;
-localparam [3:0] STATE_REFRESH_NOP3 = 'd8;
-localparam [3:0] STATE_REFRESH_NOP4 = 'd9;
-localparam [3:0] STATE_REFRESH_NOP5 = 'd10;
-localparam [3:0] STATE_REFRESH_NOP6 = 'd11;
-localparam [3:0] STATE_REFRESH_NOP7 = 'd12;
-localparam [3:0] STATE_REFRESH_NOP8 = 'd13;
-
-localparam [3:0] STATE_READ_HOLD = 'd14;
-localparam [3:0] STATE_WRITE_HOLD = 'd15;
-
-
-reg [3:0] state=0;
-reg [1:0] refresh_wait = 2'b00;
-reg [1:0] BA_IN;
-reg [1:0] DQM_IN;
-
-always @( negedge CLK ) begin
-
-
+always @(negedge CLK)  begin
 	if( READY ) begin
 		CMD <= SETUP_CMD;
 		MAIN_MA <= SETUP_MA;
@@ -193,15 +191,6 @@ always @(posedge CLK) begin
 end
 	
 assign RdDataValid = RdDataValidPipe[trl-1];
-
-/*
-assign DQM = READY ? 2'b11 : { UDS, LDS };
-assign BA = READY ? 2'b00 : A[2:1];
-assign MA = READY ? SETUP_MA : MAIN_MA;
-assign RAS = READY ? SETUP_CMD[2] : CMD[2];
-assign CAS = READY ? SETUP_CMD[1] : CMD[1];
-assign RAMWE = READY ? SETUP_CMD[0] : CMD[0];
-*/
 
 assign DQM = DQM_IN;
 assign BA = BA_IN;
