@@ -51,22 +51,16 @@ wire PRECHARGE = 		COUNTER[13:3] == 11'd1024; // x1 precharge command
 wire AUTO_REFRESH = 	COUNTER[13:3] == 11'd1030 || COUNTER == 11'd1036;
 wire LOAD_MODE = 		COUNTER[13:3] == 11'd1042;
 
-always @(posedge CLK or negedge RST)  begin
+// indicate refresh needed and do initialisation
+always @(negedge CLK or negedge RST)  begin
+
 	if (RST == 1'b0) begin 
 		COUNTER 	<= 'd0;
-	end else begin 
-		COUNTER <= COUNTER + 'd1;
-	end
-end
-
-// indicate refresh needed and do initialisation
-always @(posedge CLK or negedge RST)  begin
-
-	if (RST == 1'b0) begin 
 		READY		<= 'b1;
 		REFRESH		<= 'b1;
 		SETUP_CMD 		<= CMD_NOP; 
 	end else begin 
+		COUNTER <= COUNTER + 'd1;
 		REFRESH <= (COUNTER[8:0] != 9'h0) | READY;
 		SETUP_CMD 	<= CMD_NOP; 
 	
