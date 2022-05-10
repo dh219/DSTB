@@ -118,65 +118,78 @@ localparam [3:0] STATE_WRITE_HOLD = 'd15;
 
 reg [3:0] state=0;
 reg [1:0] refresh_wait = 2'b00;
+reg [1:0] BA_IN;
+reg [1:0] DQM_IN;
 
 always @( negedge CLK ) begin
 
 
-	case(state)
-		STATE_IDLE: begin
-			if( ~refresh_req ) begin
+	if( READY ) begin
+		CMD <= SETUP_CMD;
+		MAIN_MA <= SETUP_MA;
+		BA_IN <= 2'b00;
+		DQM_IN <= 2'b11;
+	end
+	else begin
+		case(state)
+			STATE_IDLE: begin
+				if( ~refresh_req ) begin
+					CMD <= CMD_NOP;
+					state <= STATE_REFRESH_NOP1;
+				end
+				else if( ~(ACCESS) ) begin  // is there a read or write request?
+					CMD <= CMD_ACTIVE;  // if so activate
+					state <= RW ? STATE_READ : STATE_WRITE_HOLD;
+				end
+				else begin
+					CMD <= CMD_NOP;  // otherwise stay idle
+					state <= STATE_IDLE;
+				end
+				MAIN_MA <= { 1'b0, A[22:11] };
+			end
+			STATE_READ: begin
+				CMD <= CMD_READ;
+				MAIN_MA <= { 2'b00, ACCESS, 2'b00, A[10:3] }; // no auto-precharge
+				state <= ACCESS|(UDS&LDS) ? STATE_IDLE : STATE_READ;
+			end
+			STATE_WRITE_HOLD: begin
 				CMD <= CMD_NOP;
-				state <= STATE_REFRESH_NOP1;
+				if( ~(UDS&LDS) )
+					state <= STATE_WRITE;
 			end
-			else if( ~(ACCESS) ) begin  // is there a read or write request?
-				CMD <= CMD_ACTIVE;  // if so activate
-				state <= RW ? STATE_READ : STATE_WRITE_HOLD;
+			STATE_WRITE: begin
+				CMD <= CMD_WRITE;
+				MAIN_MA <= { 3'b001, 2'b00, A[10:3] }; // auto-precharge
+				state <= STATE_ACCESS_WAIT;
 			end
-			else begin
-				CMD <= CMD_NOP;  // otherwise stay idle
+			STATE_ACCESS_WAIT: begin
+				CMD <= CMD_NOP;
+				state <= ACCESS ? STATE_IDLE : STATE_ACCESS_WAIT;
+			end
+			STATE_REFRESH_NOP1: begin
+				CMD <= CMD_NOP;
+				state <= STATE_REFRESH;
+			end
+			STATE_REFRESH: begin
+				CMD <= CMD_REFRESH;
+				MAIN_MA[10] 	<= 1'b1;      // precharge all banks
+				refresh_wait <= 2'b11;
+				state <= STATE_REFRESH_NOP2;
+			end
+			STATE_REFRESH_NOP2: begin
+				CMD <= CMD_NOP;
+				refresh_wait <= refresh_wait - 'd1;
+				state <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
+			end
+			default: begin
+				CMD <= CMD_NOP;
 				state <= STATE_IDLE;
-			end
-			MAIN_MA <= { 1'b0, A[22:11] };
-		end
-		STATE_READ: begin
-			CMD <= CMD_READ;
-			MAIN_MA <= { 2'b00, ACCESS, 2'b00, A[10:3] }; // no auto-precharge
-			state <= ACCESS|(UDS&LDS) ? STATE_IDLE : STATE_READ;
-		end
-		STATE_WRITE_HOLD: begin
-			CMD <= CMD_NOP;
-			if( ~(UDS&LDS) )
-				state <= STATE_WRITE;
-		end
-		STATE_WRITE: begin
-			CMD <= CMD_WRITE;
-			MAIN_MA <= { 3'b001, 2'b00, A[10:3] }; // auto-precharge
-			state <= STATE_ACCESS_WAIT;
-		end
-		STATE_ACCESS_WAIT: begin
-			CMD <= CMD_NOP;
-			state <= ACCESS ? STATE_IDLE : STATE_ACCESS_WAIT;
-		end
-		STATE_REFRESH_NOP1: begin
-			CMD <= CMD_NOP;
-			state <= STATE_REFRESH;
-		end
-		STATE_REFRESH: begin
-			CMD <= CMD_REFRESH;
-			MAIN_MA[10] 	<= 1'b1;      // precharge all banks
-			refresh_wait <= 2'b11;
-			state <= STATE_REFRESH_NOP2;
-		end
-		STATE_REFRESH_NOP2: begin
-			CMD <= CMD_NOP;
-			refresh_wait <= refresh_wait - 'd1;
-			state <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
-		end
-		default: begin
-			CMD <= CMD_NOP;
-			state <= STATE_IDLE;
-		end		
-	endcase
+			end		
+		endcase
+
+		DQM_IN <= { UDS, LDS };
+		BA_IN <= A[2:1];
+	end
 end
 
 localparam trl = 4;  // total read latency is the SDRAM CAS-latency (two) plus the SDRAM controller induced latency (two)
@@ -190,13 +203,22 @@ end
 	
 assign RdDataValid = RdDataValidPipe[trl-1];
 
-
+/*
 assign DQM = READY ? 2'b11 : { UDS, LDS };
 assign BA = READY ? 2'b00 : A[2:1];
 assign MA = READY ? SETUP_MA : MAIN_MA;
 assign RAS = READY ? SETUP_CMD[2] : CMD[2];
 assign CAS = READY ? SETUP_CMD[1] : CMD[1];
 assign RAMWE = READY ? SETUP_CMD[0] : CMD[0];
+*/
+
+assign DQM = DQM_IN;
+assign BA = BA_IN;
+assign MA = MAIN_MA;
+assign RAS = CMD[2];
+assign CAS = CMD[1];
+assign RAMWE = CMD[0];
+
 
 wire valid;
 FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValid ), .PRE( ACCESS ), .Q( valid ) );
