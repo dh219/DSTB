@@ -35,7 +35,7 @@ localparam [2:0] CMD_NOP       = 3'b111;
 
 parameter MODE = 13'b0000000100000;
 
-reg [10:0] COUNTER;
+reg [13:0] COUNTER;
 reg READY;
 reg [2:0] SETUP_CMD;
 reg [2:0] CMD;
@@ -45,16 +45,13 @@ reg [12:0] MAIN_MA;
 
 
 // startup timing
-// using 8MHZ clock
-// 100us before PRECHARGE (800 cycles -- say 1024)
-//wire PRECHARGE = 		COUNTER[10] & ( COUNTER[3:0] == 4'b0000 ); // x1 precharge command
-//wire AUTO_REFRESH = 	COUNTER[10] & ( ( COUNTER[3:0] == 4'b0010 ) | ( COUNTER[3:0] == 4'b0100 ) );
-//wire LOAD_MODE = 		COUNTER[10] & ( COUNTER[3:0] == 4'b0110 );
-wire PRECHARGE = 		COUNTER == 11'd1024; // x1 precharge command
-wire AUTO_REFRESH = 	COUNTER == 11'd1030 || COUNTER == 11'd1036;
-wire LOAD_MODE = 		COUNTER == 11'd1042;
+// using 66MHZ clock
+// 100us before PRECHARGE (6600 cycles)
+wire PRECHARGE = 		COUNTER[13:3] == 11'd1024; // x1 precharge command
+wire AUTO_REFRESH = 	COUNTER[13:3] == 11'd1030 || COUNTER == 11'd1036;
+wire LOAD_MODE = 		COUNTER[13:3] == 11'd1042;
 
-always @(posedge CLK8 or negedge RST)  begin
+always @(posedge CLK or negedge RST)  begin
 	if (RST == 1'b0) begin 
 		COUNTER 	<= 'd0;
 	end else begin 
@@ -70,7 +67,7 @@ always @(posedge CLK or negedge RST)  begin
 		REFRESH		<= 'b1;
 		SETUP_CMD 		<= CMD_NOP; 
 	end else begin 
-		REFRESH <= (COUNTER[5:0] != 6'h0) | READY;
+		REFRESH <= (COUNTER[8:0] != 9'h0) | READY;
 		SETUP_CMD 	<= CMD_NOP; 
 	
 		if (READY == 1'b1) begin
@@ -90,7 +87,7 @@ always @(posedge CLK or negedge RST)  begin
 			end
 			// latch when the refresh period is complete
 			// min 2 clock cycles after MODE
-			READY <= COUNTER != 11'd1048;
+			READY <= COUNTER[13:3] != 11'd1048;
 		end 
 	end	
 end
