@@ -117,12 +117,10 @@ localparam [3:0] STATE_WRITE_HOLD = 'd15;
 
 
 reg [3:0] state=0;
-reg DS = 1'b1;
 reg [1:0] refresh_wait = 2'b00;
 
 always @( negedge CLK ) begin
 
-	DS <= UDS&LDS;
 
 	case(state)
 		STATE_IDLE: begin
@@ -143,11 +141,11 @@ always @( negedge CLK ) begin
 		STATE_READ: begin
 			CMD <= CMD_READ;
 			MAIN_MA <= { 2'b00, ACCESS, 2'b00, A[10:3] }; // no auto-precharge
-			state <= ACCESS|DS ? STATE_IDLE : STATE_READ;
+			state <= ACCESS|(UDS&LDS) ? STATE_IDLE : STATE_READ;
 		end
 		STATE_WRITE_HOLD: begin
 			CMD <= CMD_NOP;
-			if( ~DS )
+			if( ~(UDS&LDS) )
 				state <= STATE_WRITE;
 		end
 		STATE_WRITE: begin
@@ -157,7 +155,7 @@ always @( negedge CLK ) begin
 		end
 		STATE_ACCESS_WAIT: begin
 			CMD <= CMD_NOP;
-			state <= ACCESS|DS ? STATE_IDLE : STATE_ACCESS_WAIT;
+			state <= ACCESS ? STATE_IDLE : STATE_ACCESS_WAIT;
 		end
 		STATE_REFRESH_NOP1: begin
 			CMD <= CMD_NOP;
