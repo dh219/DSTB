@@ -131,7 +131,7 @@ nouveau_sdram sdram(
 	.RAMWE(ramwe)
 );
 
-wire SLOW = 1'b0; //AS_INT | ~altram_access_int;
+wire SLOW = AS_INT | ~altram_access_int;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),

@@ -117,13 +117,8 @@ localparam [3:0] STATE_WRITE_HOLD = 'd15;
 
 
 reg [3:0] state=0;
-reg [3:0] nextstate=0;
 reg DS = 1'b1;
 reg [1:0] refresh_wait = 2'b00;
-
-always @( posedge CLK ) begin
-	state <= nextstate;
-end
 
 always @( negedge CLK ) begin
 
@@ -133,55 +128,55 @@ always @( negedge CLK ) begin
 		STATE_IDLE: begin
 			if( ~refresh_req ) begin
 				CMD <= CMD_NOP;
-				nextstate <= STATE_REFRESH_NOP1;
+				state <= STATE_REFRESH_NOP1;
 			end
 			else if( ~(ACCESS) ) begin  // is there a read or write request?
 				CMD <= CMD_ACTIVE;  // if so activate
-				nextstate <= RW ? STATE_READ : STATE_WRITE_HOLD;
+				state <= RW ? STATE_READ : STATE_WRITE_HOLD;
 			end
 			else begin
 				CMD <= CMD_NOP;  // otherwise stay idle
-				nextstate <= STATE_IDLE;
+				state <= STATE_IDLE;
 			end
 			MAIN_MA <= { 1'b0, A[22:11] };
 		end
 		STATE_READ: begin
 			CMD <= CMD_READ;
 			MAIN_MA <= { 2'b00, ACCESS, 2'b00, A[10:3] }; // no auto-precharge
-			nextstate <= ACCESS ? STATE_IDLE : STATE_READ;
+			state <= ACCESS|DS ? STATE_IDLE : STATE_READ;
 		end
 		STATE_WRITE_HOLD: begin
 			CMD <= CMD_NOP;
 			if( ~DS )
-				nextstate <= STATE_WRITE;
+				state <= STATE_WRITE;
 		end
 		STATE_WRITE: begin
 			CMD <= CMD_WRITE;
 			MAIN_MA <= { 3'b001, 2'b00, A[10:3] }; // auto-precharge
-			nextstate <= STATE_ACCESS_WAIT;
+			state <= STATE_ACCESS_WAIT;
 		end
 		STATE_ACCESS_WAIT: begin
 			CMD <= CMD_NOP;
-			nextstate <= ACCESS ? STATE_IDLE : STATE_ACCESS_WAIT;
+			state <= ACCESS|DS ? STATE_IDLE : STATE_ACCESS_WAIT;
 		end
 		STATE_REFRESH_NOP1: begin
 			CMD <= CMD_NOP;
-			nextstate <= STATE_REFRESH;
+			state <= STATE_REFRESH;
 		end
 		STATE_REFRESH: begin
 			CMD <= CMD_REFRESH;
 			MAIN_MA[10] 	<= 1'b1;      // precharge all banks
 			refresh_wait <= 2'b11;
-			nextstate <= STATE_REFRESH_NOP2;
+			state <= STATE_REFRESH_NOP2;
 		end
 		STATE_REFRESH_NOP2: begin
 			CMD <= CMD_NOP;
 			refresh_wait <= refresh_wait - 'd1;
-			nextstate <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
+			state <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
 		end
 		default: begin
 			CMD <= CMD_NOP;
-			nextstate <= STATE_IDLE;
+			state <= STATE_IDLE;
 		end		
 	endcase
 end
