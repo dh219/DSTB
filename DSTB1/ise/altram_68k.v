@@ -118,6 +118,9 @@ nouveau_sdram sdram(
 	.UDS(UDS),
 	.LDS(LDS),
 	.RW(RW),
+	
+	.DTACK_IN(DTACK_INT),
+	
 	.A( { REWRITE_A2320, A[19:1] } ),
 	.VALID(sdram_valid),
 	.WTERM(sdram_wterm),
@@ -131,7 +134,7 @@ nouveau_sdram sdram(
 	.RAMWE(ramwe)
 );
 
-wire SLOW = AS_INT | ~altram_access_int;
+wire SLOW = 1'b0;//AS_INT | ~altram_access_int;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),

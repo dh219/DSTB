@@ -14,6 +14,8 @@ module nouveau_sdram(
 	input RW,
 	input [23:1] A,
 	
+	input DTACK_IN,
+	
 	output [12:0] MA,
 	output [1:0] BA,
 	output [1:0] DQM,
@@ -112,12 +114,15 @@ always @(negedge CLK or negedge RST)  begin
 	end	
 end
 
+reg can_start = 1'b1;
+
 always @(negedge CLK)  begin
 	if( READY ) begin
 		CMD <= SETUP_CMD;
 		MAIN_MA <= SETUP_MA;
 		BA_IN <= 2'b00;
 		DQM_IN <= 2'b11;
+		can_start <= 1'b1;
 	end
 	else begin
 		case(state)
@@ -126,13 +131,16 @@ always @(negedge CLK)  begin
 					CMD <= CMD_NOP;
 					state <= STATE_REFRESH_NOP1;
 				end
-				else if( ~(ACCESS) ) begin  // is there a read or write request?
+				else if( ~(ACCESS) & can_start ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;  // if so activate
 					state <= RW ? STATE_READ : STATE_WRITE_HOLD;
+					can_start <= 1'b0;
 				end
 				else begin
 					CMD <= CMD_NOP;  // otherwise stay idle
 					state <= STATE_IDLE;
+					if( DTACK_IN )
+						can_start <= 1'b1;
 				end
 				MAIN_MA <= { 1'b0, A[22:11] };
 			end
@@ -187,7 +195,7 @@ always @(posedge CLK) begin
 	if( ACCESS )
 		RdDataValidPipe <= 'd0;
 	else
-		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state==2'h1 & ~ACCESS };
+		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ };
 end
 	
 assign RdDataValid = RdDataValidPipe[trl-1];
