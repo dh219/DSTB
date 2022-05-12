@@ -7,15 +7,13 @@
 module nouveau_sdram(
 	input CLK,
 	input CLK8,
-	input RST,
-	input ACCESS,
-	input UDS,
-	input LDS,
-	input RW,
+	input RST_ASYNC,
+	input ACCESS_ASYNC,
+	input UDS_ASYNC,
+	input LDS_ASYNC,
+	input RW_ASYNC,
 	input [23:1] A,
-	
-	input DTACK_IN,
-	
+
 	output [12:0] MA,
 	output [1:0] BA,
 	output [1:0] DQM,
@@ -45,6 +43,12 @@ reg REFRESH;
 reg [12:0] SETUP_MA;
 reg [12:0] MAIN_MA;
 
+
+reg RST = 1'b1;
+reg ACCESS = 1'b1;
+reg UDS = 1'b1;
+reg LDS = 1'b1;
+reg RW = 1'b1;
 
 // startup timing
 // using 66MHZ clock
@@ -114,15 +118,20 @@ always @(negedge CLK or negedge RST)  begin
 	end	
 end
 
-reg can_start = 1'b1;
-
 always @(negedge CLK)  begin
+	RST <= RST_ASYNC;
+	ACCESS <= ACCESS_ASYNC;
+	UDS <= UDS_ASYNC;
+	LDS <= LDS_ASYNC;
+	RW <= RW_ASYNC;
+
+
+
 	if( READY ) begin
 		CMD <= SETUP_CMD;
 		MAIN_MA <= SETUP_MA;
 		BA_IN <= 2'b00;
 		DQM_IN <= 2'b11;
-		can_start <= 1'b1;
 	end
 	else begin
 		case(state)
@@ -131,23 +140,20 @@ always @(negedge CLK)  begin
 					CMD <= CMD_NOP;
 					state <= STATE_REFRESH_NOP1;
 				end
-				else if( ~(ACCESS) & can_start ) begin  // is there a read or write request?
+				else if( ~(ACCESS) ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;  // if so activate
 					state <= RW ? STATE_READ : STATE_WRITE_HOLD;
-					can_start <= 1'b0;
 				end
 				else begin
 					CMD <= CMD_NOP;  // otherwise stay idle
 					state <= STATE_IDLE;
-					if( DTACK_IN )
-						can_start <= 1'b1;
 				end
 				MAIN_MA <= { 1'b0, A[22:11] };
 			end
 			STATE_READ: begin
 				CMD <= CMD_READ;
-				MAIN_MA <= { 2'b00, ACCESS, 2'b00, A[10:3] }; // no auto-precharge
-				state <= ACCESS|(UDS&LDS) ? STATE_IDLE : STATE_READ;
+				MAIN_MA <= { 2'b00, (UDS&LDS), 2'b00, A[10:3] }; // no auto-precharge
+				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ;
 			end
 			STATE_WRITE_HOLD: begin
 				CMD <= CMD_NOP;
@@ -161,7 +167,7 @@ always @(negedge CLK)  begin
 			end
 			STATE_ACCESS_WAIT: begin
 				CMD <= CMD_NOP;
-				state <= ACCESS ? STATE_IDLE : STATE_ACCESS_WAIT;
+				state <= (UDS&LDS) ? STATE_IDLE : STATE_ACCESS_WAIT;
 			end
 			STATE_REFRESH_NOP1: begin
 				CMD <= CMD_NOP;
