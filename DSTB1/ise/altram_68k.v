@@ -104,6 +104,11 @@ wire altram_access_int = AS_INT | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'
 wire altram_access_ext = AS | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
 
+reg PSG_DTACK;
+always @( negedge DTACK ) begin
+	PSG_DTACK <= ( A[23:8] != 16'hFF88 );
+end
+
 wire TOS206 = AS_INT | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) );
 reg [1:0] dtack_tos206 = 1'b1;
 always @( negedge CLK8 ) begin
@@ -119,7 +124,7 @@ nouveau_sdram sdram(
 	.CLK8(CLK8),
 	.RST_ASYNC(RST),
 	
-	.ACCESS_ASYNC( altram_access_int ),
+	.AS_ASYNC( altram_access_int ),
 	.UDS_ASYNC(UDS),
 	.LDS_ASYNC(LDS),
 	.RW_ASYNC(RW),
@@ -137,7 +142,7 @@ nouveau_sdram sdram(
 	.RAMWE(ramwe)
 );
 
-wire SLOW = ALLOWFAST ? AS_INT | ~altram_access_int : 1'b0;
+wire SLOW = ALLOWFAST ? PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
@@ -178,7 +183,7 @@ assign BOE = 1'b0;
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
 assign TP[1] = TOS206; 
-assign TP[2] = SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
+assign TP[2] = 1'bz;//~PSG_DTACK;//SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
 assign TP[3] = 1'bz;
 assign TP[4] = 1'bz;
 assign TP[5] = 1'bz;

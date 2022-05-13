@@ -8,7 +8,7 @@ module nouveau_sdram(
 	input CLK,
 	input CLK8,
 	input RST_ASYNC,
-	input ACCESS_ASYNC,
+	input AS_ASYNC,
 	input UDS_ASYNC,
 	input LDS_ASYNC,
 	input RW_ASYNC,
@@ -45,7 +45,7 @@ reg [12:0] MAIN_MA;
 
 
 reg RST = 1'b1;
-reg ACCESS = 1'b1;
+reg AS = 1'b1;
 reg UDS = 1'b1;
 reg LDS = 1'b1;
 reg RW = 1'b1;
@@ -120,11 +120,10 @@ end
 
 always @(negedge CLK)  begin
 	RST <= RST_ASYNC;
-	ACCESS <= ACCESS_ASYNC;
+	AS <= AS_ASYNC;
 	UDS <= UDS_ASYNC;
 	LDS <= LDS_ASYNC;
 	RW <= RW_ASYNC;
-
 
 
 	if( READY ) begin
@@ -140,7 +139,7 @@ always @(negedge CLK)  begin
 					CMD <= CMD_NOP;
 					state <= STATE_REFRESH_NOP1;
 				end
-				else if( ~(ACCESS) ) begin  // is there a read or write request?
+				else if( ~AS ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;  // if so activate
 					state <= RW ? STATE_READ : STATE_WRITE_HOLD;
 				end
@@ -197,8 +196,8 @@ end
 
 localparam trl = 4;  // total read latency is the SDRAM CAS-latency (two) plus the SDRAM controller induced latency (two)
 reg [trl-1:0] RdDataValidPipe;  
-always @(posedge CLK) begin
-	if( ACCESS )
+always @(negedge CLK) begin
+	if( UDS&LDS )
 		RdDataValidPipe <= 'd0;
 	else
 		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ };
@@ -214,12 +213,14 @@ assign CAS = CMD[1];
 assign RAMWE = CMD[0];
 
 
+/* fix these next */
+
 wire valid;
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValid ), .PRE( ACCESS ), .Q( valid ) );
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValid ), .PRE( AS ), .Q( valid ) );
 assign VALID = READY | valid;
 
 wire wterm;
-FDCP wterm_latch( .D(1'b0), .C( 1'b0), .CLR(CMD == CMD_ACTIVE), .PRE( ACCESS ), .Q( wterm ) );
+FDCP wterm_latch( .D(1'b0), .C( 1'b0), .CLR(CMD == CMD_ACTIVE), .PRE( AS ), .Q( wterm ) );
 assign WTERM = READY | wterm;
 
 endmodule
