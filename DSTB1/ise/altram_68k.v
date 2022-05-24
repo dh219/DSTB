@@ -56,7 +56,7 @@ end
 
 reg ALLOWFAST = 1'b1;
 always @( posedge RST ) begin
-	ALLOWFAST <= TP[3];
+	ALLOWFAST <= ~TP[3];
 end
 
 /* RAM */
@@ -100,7 +100,7 @@ wire cas;
 wire ramwe;
 wire sdram_valid;
 
-wire altram_access_int = AS_INT | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
+wire altram_access_int = (UDS&LDS) | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
 wire altram_access_ext = AS | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
 
@@ -154,7 +154,7 @@ clockmux mod_clock (
 );
 
 /* assignments */
-assign DTACK = 1'bz; //(BGK | altram_access_ext | AS )  ? 1'bz : 1'b0;
+assign DTACK = (BGK | (sdram_valid & sdram_wterm) )  ? 1'bz : 1'b0;
 
 //assign AS_INT = BGK ? 1'bz : AS;
 
@@ -162,7 +162,7 @@ wire newas = altram_access_int ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
 assign DTACK_INT = DTACK & reg_dtack & sdram_valid & sdram_wterm & dtack_tos206;
 
-assign BERR = BGK | altram_access_ext  ? 1'bz : 1'b0;
+assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
@@ -183,7 +183,7 @@ assign BOE = 1'b0;
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
 assign TP[1] = TOS206; 
-assign TP[2] = 1'bz;//~PSG_DTACK;//SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
+assign TP[2] = SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
 assign TP[3] = 1'bz;
 assign TP[4] = 1'bz;
 assign TP[5] = 1'bz;
