@@ -56,7 +56,7 @@ end
 
 reg ALLOWFAST = 1'b1;
 always @( posedge RST ) begin
-	ALLOWFAST <= ~TP[3];
+	ALLOWFAST <= TP[3];
 end
 
 /* RAM */
@@ -183,7 +183,7 @@ assign BOE = 1'b0;
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
 assign TP[1] = TOS206; 
-assign TP[2] = SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
+assign TP[2] = 1'bz; //SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
 assign TP[3] = 1'bz;
 assign TP[4] = 1'bz;
 assign TP[5] = 1'bz;
