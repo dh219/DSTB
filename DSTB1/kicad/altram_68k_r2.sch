@@ -127,29 +127,6 @@ F 3 "~" H 11000 5050 50  0001 C CNN
 $EndComp
 $Comp
 L SN74CB3T3245DW:SN74CB3T3245DW IC?
-U 1 1 5FFD8BC2
-P 13600 6850
-AR Path="/5FC0C568/5FFD8BC2" Ref="IC?"  Part="1" 
-AR Path="/608897EB/5FFD8BC2" Ref="IC?"  Part="1" 
-AR Path="/5FFD8BC2" Ref="IC2"  Part="1" 
-F 0 "IC2" H 14100 7115 50  0000 C CNN
-F 1 "SN74CB3T3245PW" H 14100 7024 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 14450 6950 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/sn74cb3t3245.pdf" H 14450 6850 50  0001 L CNN
-F 4 "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC" H 14450 6750 50  0001 L CNN "Description"
-F 5 "2.65" H 14450 6650 50  0001 L CNN "Height"
-F 6 "Texas Instruments" H 14450 6550 50  0001 L CNN "Manufacturer_Name"
-F 7 "SN74CB3T3245DW" H 14450 6450 50  0001 L CNN "Manufacturer_Part_Number"
-F 8 "SN74CB3T3245DW" H 14450 6350 50  0001 L CNN "Arrow Part Number"
-F 9 "https://www.arrow.com/en/products/sn74cb3t3245dw/texas-instruments" H 14450 6250 50  0001 L CNN "Arrow Price/Stock"
-F 10 "595-SN74CB3T3245DW" H 14450 6150 50  0001 L CNN "Mouser Part Number"
-F 11 "https://www.mouser.co.uk/ProductDetail/Texas-Instruments/SN74CB3T3245DW?qs=mE33ZKBHyE6dc7ntkB%252BA%252Bw%3D%3D" H 14450 6050 50  0001 L CNN "Mouser Price/Stock"
-F 12 "C7145" H 13600 6850 50  0001 C CNN "LCSC Part"
-	1    13600 6850
-	1    0    0    -1  
-$EndComp
-$Comp
-L SN74CB3T3245DW:SN74CB3T3245DW IC?
 U 1 1 5FFD967A
 P 13600 8250
 AR Path="/5FC0C568/5FFD967A" Ref="IC?"  Part="1" 
@@ -549,7 +526,7 @@ MD7
 Text Notes 14050 9750 0    50   ~ 0
 SN74CBT3245APWR also works well (& cheaper)
 $Comp
-L david:68000D_PLUG U1
+L 68000d_plug:68000D_PLUG U1
 U 1 1 61E14451
 P 3200 3150
 F 0 "U1" H 3200 5731 50  0000 C CNN
@@ -2482,6 +2459,29 @@ NoConn ~ 8450 8750
 NoConn ~ 8450 8650
 Text Label 8600 8550 0    50   ~ 0
 LED1
+$Comp
+L SN74CB3T3245DW:SN74CB3T3245DW IC?
+U 1 1 5FFD8BC2
+P 13600 6850
+AR Path="/5FC0C568/5FFD8BC2" Ref="IC?"  Part="1" 
+AR Path="/608897EB/5FFD8BC2" Ref="IC?"  Part="1" 
+AR Path="/5FFD8BC2" Ref="IC2"  Part="1" 
+F 0 "IC2" H 14100 7115 50  0000 C CNN
+F 1 "SN74CB3T3245PW" H 14100 7024 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 14450 6950 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn74cb3t3245.pdf" H 14450 6850 50  0001 L CNN
+F 4 "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC" H 14450 6750 50  0001 L CNN "Description"
+F 5 "2.65" H 14450 6650 50  0001 L CNN "Height"
+F 6 "Texas Instruments" H 14450 6550 50  0001 L CNN "Manufacturer_Name"
+F 7 "SN74CB3T3245DW" H 14450 6450 50  0001 L CNN "Manufacturer_Part_Number"
+F 8 "SN74CB3T3245DW" H 14450 6350 50  0001 L CNN "Arrow Part Number"
+F 9 "https://www.arrow.com/en/products/sn74cb3t3245dw/texas-instruments" H 14450 6250 50  0001 L CNN "Arrow Price/Stock"
+F 10 "595-SN74CB3T3245DW" H 14450 6150 50  0001 L CNN "Mouser Part Number"
+F 11 "https://www.mouser.co.uk/ProductDetail/Texas-Instruments/SN74CB3T3245DW?qs=mE33ZKBHyE6dc7ntkB%252BA%252Bw%3D%3D" H 14450 6050 50  0001 L CNN "Mouser Price/Stock"
+F 12 "C7145" H 13600 6850 50  0001 C CNN "LCSC Part"
+	1    13600 6850
+	1    0    0    -1  
+$EndComp
 Wire Bus Line
 	5950 8650 5950 10900
 Wire Bus Line

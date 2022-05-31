@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name 68000d_plug)(type Legacy)(uri ${KIPRJMOD}/68000d_plug.lib)(options "")(descr ""))
+  (lib (name SN74CB3T3245DW)(type Legacy)(uri ${KIPRJMOD}/SN74CB3T3245DW.lib)(options "")(descr ""))
+)
