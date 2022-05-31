@@ -1,3 +1,6 @@
+/* DAVID'S ST BOOSTER v 1 (DSTB1) 				*/
+/* Copyright 2022 D Henderson 						*/
+/* Released under the terms of the GPLv2 	*/
 /* based on https://www.eetimes.com/techniques-to-make-clock-switching-glitch-free/# */
 
 module clockmux( 

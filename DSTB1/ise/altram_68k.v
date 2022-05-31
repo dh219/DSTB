@@ -1,5 +1,9 @@
 `timescale 1ns / 1ps
 
+/* DAVID'S ST BOOSTER v 1 (DSTB1) 				*/
+/* Copyright 2022 D Henderson 						*/
+/* Released under the terms of the GPLv2 	*/
+
 module altram_68k (
 	input AS_INT,
 	inout AS,
@@ -36,7 +40,8 @@ module altram_68k (
 	input [2:0] FC,
 	input [23:1] A,
 
-	input [1:5] TP
+	inout [1:5] TP,
+	output LED
  );
 
 
@@ -47,6 +52,11 @@ end
 reg CLKOSC_4 = 1'b1;
 always @(posedge CLKOSC_2 ) begin
 	CLKOSC_4 <= ~CLKOSC_4;
+end
+
+reg ALLOWFAST = 1'b1;
+always @( posedge RST ) begin
+	ALLOWFAST <= TP[3];
 end
 
 /* RAM */
@@ -90,20 +100,35 @@ wire cas;
 wire ramwe;
 wire sdram_valid;
 
-wire altram_access_int = AS_INT | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
+wire altram_access_int = (UDS&LDS) | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
 wire altram_access_ext = AS | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
-
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
+
+reg PSG_DTACK;
+always @( negedge DTACK ) begin
+	PSG_DTACK <= ( A[23:8] != 16'hFF88 );
+end
+
+wire TOS206 = AS_INT | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) );
+reg [1:0] dtack_tos206 = 1'b1;
+always @( negedge CLK8 ) begin
+	if( AS_INT )
+		dtack_tos206 <= 2'b11;
+	else
+		dtack_tos206 <= {dtack_tos206[0],TOS206};
+end
+
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
 	.CLK8(CLK8),
-	.RST(RST),
+	.RST_ASYNC(RST),
 	
-	.ACCESS( altram_access_int ),
-	.UDS(UDS),
-	.LDS(LDS),
-	.RW(RW),
+	.AS_ASYNC( altram_access_int ),
+	.UDS_ASYNC(UDS),
+	.LDS_ASYNC(LDS),
+	.RW_ASYNC(RW),
+	
 	.A( { REWRITE_A2320, A[19:1] } ),
 	.VALID(sdram_valid),
 	.WTERM(sdram_wterm),
@@ -117,7 +142,7 @@ nouveau_sdram sdram(
 	.RAMWE(ramwe)
 );
 
-wire SLOW = AS_INT | ~altram_access_int;
+wire SLOW = ALLOWFAST ? PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
@@ -129,15 +154,15 @@ clockmux mod_clock (
 );
 
 /* assignments */
-assign DTACK = 1'bz; //(BGK | altram_access_ext | AS )  ? 1'bz : 1'b0;
+assign DTACK = (BGK | (sdram_valid & sdram_wterm) )  ? 1'bz : 1'b0;
 
 //assign AS_INT = BGK ? 1'bz : AS;
 
 wire newas = altram_access_int ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
-assign DTACK_INT = DTACK & reg_dtack & sdram_valid & sdram_wterm;
+assign DTACK_INT = DTACK & reg_dtack & sdram_valid & sdram_wterm & dtack_tos206;
 
-assign BERR = BGK | altram_access_ext  ? 1'bz : 1'b0;
+assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
@@ -157,11 +182,12 @@ assign BOE = 1'b0;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
-/*
-assign TP[1] = 1'bz; //screen ; //altram_access | AS_INT;
-assign TP[2] = 1'b1;
-assign TP[3] = 1'b1;
-assign TP[4] = 1'b1;
-assign TP[5] = altram_access_int;
-*/
+assign TP[1] = TOS206; 
+assign TP[2] = 1'bz; //SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
+assign TP[3] = 1'bz;
+assign TP[4] = 1'bz;
+assign TP[5] = 1'bz;
+
+assign LED = sdram_valid & sdram_wterm;
+
 endmodule

@@ -42,6 +42,7 @@
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_STX" xil_pn:name="altram_68k.stx"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_REPORT" xil_pn:name="altram_68k.syr"/>
     <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.tim"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.tspec"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_VM6" xil_pn:name="altram_68k.vm6"/>
     <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="altram_68k.xml"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST" xil_pn:name="altram_68k.xst"/>
@@ -57,15 +58,15 @@
   </files>
 
   <transforms xmlns="http://www.xilinx.com/XMLSchema">
-    <transform xil_pn:end_ts="1646694594" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1646694594">
+    <transform xil_pn:end_ts="1652824371" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1652824371">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1646694594" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-8395994415392068288" xil_pn:start_ts="1646694594">
+    <transform xil_pn:end_ts="1652824371" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-8395994415392068288" xil_pn:start_ts="1652824371">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1649971005" xil_pn:in_ck="-701195565247016892" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="-5649762932161676278" xil_pn:start_ts="1649971000">
+    <transform xil_pn:end_ts="1653424019" xil_pn:in_ck="-701195565247016892" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="-5649762932161676278" xil_pn:start_ts="1653424014">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -81,12 +82,13 @@
       <outfile xil_pn:name="webtalk_pn.xml"/>
       <outfile xil_pn:name="xst"/>
     </transform>
-    <transform xil_pn:end_ts="1649971203" xil_pn:in_ck="-8934673440187800603" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="8767104413774596379" xil_pn:start_ts="1649971203">
+    <transform xil_pn:end_ts="1652824377" xil_pn:in_ck="-8934673440187800603" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="8767104413774596379" xil_pn:start_ts="1652824377">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1649971207" xil_pn:in_ck="-7294396204703951676" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="1893441463969615248" xil_pn:start_ts="1649971203">
+    <transform xil_pn:end_ts="1653424024" xil_pn:in_ck="-7294396204703951676" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="1893441463969615248" xil_pn:start_ts="1653424019">
       <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
@@ -94,11 +96,10 @@
       <outfile xil_pn:name="altram_68k.ngd"/>
       <outfile xil_pn:name="altram_68k_ngdbuild.xrpt"/>
     </transform>
-    <transform xil_pn:end_ts="1649971212" xil_pn:in_ck="-8934673440187808096" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="4947420855286448381" xil_pn:start_ts="1649971207">
+    <transform xil_pn:end_ts="1653424029" xil_pn:in_ck="-8934673440187808096" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-8452889877312371130" xil_pn:start_ts="1653424024">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
       <outfile xil_pn:name="altram_68k.gyd"/>
       <outfile xil_pn:name="altram_68k.mfd"/>
       <outfile xil_pn:name="altram_68k.nga"/>
@@ -106,24 +107,21 @@
       <outfile xil_pn:name="altram_68k.pnx"/>
       <outfile xil_pn:name="altram_68k.rpt"/>
       <outfile xil_pn:name="altram_68k.tim"/>
+      <outfile xil_pn:name="altram_68k.tspec"/>
       <outfile xil_pn:name="altram_68k.vm6"/>
       <outfile xil_pn:name="altram_68k.xml"/>
       <outfile xil_pn:name="altram_68k_build.xml"/>
       <outfile xil_pn:name="altram_68k_pad.csv"/>
     </transform>
-    <transform xil_pn:end_ts="1649971214" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1649971212">
+    <transform xil_pn:end_ts="1653424030" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1653424029">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="altram_68k.jed"/>
     </transform>
-    <transform xil_pn:end_ts="1646694609" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1646694607">
-      <status xil_pn:value="AbortedRun"/>
+    <transform xil_pn:end_ts="1653424042" xil_pn:in_ck="-8934673440187799232" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1653424041">
+      <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="InputChanged"/>
     </transform>
   </transforms>
 
