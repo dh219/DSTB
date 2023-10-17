@@ -20,9 +20,15 @@ At the moment, there is no manual. This will be written in due course.
 
 There is a build video available at https://youtu.be/VHx3kat0Q6M
 
+### Resistor Networks
+
+All resistor networks are recommended, however if you have already carried out preventative maintenance on your ST board such that the bus resistor packs have been changed to 2k2 or lower, you may omit the resistor packs on the address and data bus (RN1-10).
+
+Please note, RN11 is not a supplementary bus pull-up pack and is required for correct operation of the firmware.
+
 #### Software
 
-See https://github.com/dh219/DSTB-tools for the 'AltRAM' or 'AltROM' programs (NB. this board is not compatible with 'ExxosRAM.PRG').
+See https://github.com/dh219/DSTB-tools for the 'AltRAM' or 'AltROM' programs (NB. 'AltROM' hasn't been properly tested with later firmware builds & this board is not compatible with 'ExxosRAM.PRG').
 
 EmuTOS automatically recognises and activate AltRAM.
 
