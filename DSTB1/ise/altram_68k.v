@@ -65,7 +65,7 @@ reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
 wire rom_access = ROM_DECODE | ( A[23:20] != 4'he );
 
-//wire AS_COMBINED = AS_INT & AS;
+wire AS_COMBINED = AS_INT & AS;
 
 always @( negedge AS_INT or negedge RST ) begin
 	if( ~RST ) begin
@@ -109,10 +109,10 @@ always @( negedge DTACK ) begin
 	PSG_DTACK <= ( A[23:8] != 16'hFF88 );
 end
 
-wire TOS206 = AS_INT | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) );
+wire TOS206 = AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) );
 reg [1:0] dtack_tos206 = 1'b1;
 always @( negedge CLK8 ) begin
-	if( AS_INT )
+	if( AS_COMBINED )
 		dtack_tos206 <= 2'b11;
 	else
 		dtack_tos206 <= {dtack_tos206[0],TOS206};
@@ -154,7 +154,7 @@ clockmux mod_clock (
 );
 
 /* assignments */
-assign DTACK = (BGK | (sdram_valid & sdram_wterm) )  ? 1'bz : 1'b0;
+assign DTACK = (BGK | (sdram_valid & sdram_wterm & dtack_tos206) )  ? 1'bz : 1'b0;
 
 //assign AS_INT = BGK ? 1'bz : AS;
 
