@@ -1,5 +1,18 @@
 ## David's ST Booster (DSTB)
 
+
+# WARNING 27 July 2024 #
+
+I strongly recommend no new builds of this project for now. I believe there's a reliabiltiy of executing from AltRAM which I've not been able to get to the bottom of.
+
+Memory tests pass reliably, but I think the approach to this design in combination with clock switching and attempting to service DMA is inherently flawed.
+
+Unless I find a firmware fix, in which case I'll log that here, I recommend persuing other designs or waiting for a revision 2.
+
+David.
+
+---
+
 #### A low-cost DIY 16MHz 68000 accelerator with 8MB fast AltRAM and optional ROM cacheing
 
 Fitting into a small footprint, just 3mm wider than the 68000 socket into which this plugs, the board (\~$4) contains one XC95144XL-100 CPLD (\~$5), one 32Mbit TSSOP-II-54 SDRAM chip (~$5), two level-shifting buffers (\~$6), one 5 or 3.3V 66MHz oscillator in a 7x5mm package (\~$4) and a 3.3V LDO voltage regulator (\~$2) as the core components.
