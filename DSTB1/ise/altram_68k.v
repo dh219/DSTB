@@ -21,7 +21,6 @@ module altram_68k (
 	input CLK8,
 	output CLKOUT,
 	output RAMCLK,
-	output CKE,
 
 	inout E,
 	input E_INT,
@@ -75,6 +74,7 @@ always @( negedge AS_INT or negedge RST ) begin
 	end
 	else begin
 		if( A[23:4] == 20'hFFFE0 ) begin
+//		if( A[23:4] == 20'hFFFE1 ) begin
 			if( A[3:1] == 3'h7 ) begin
 				ROM_DECODE <= 1'b0;
 				reg_dtack <= 1'b0;
@@ -99,6 +99,7 @@ wire ras;
 wire cas;
 wire ramwe;
 wire sdram_valid;
+wire cke;
 
 wire altram_access_int = (UDS&LDS) | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
 wire altram_access_ext = AS | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
@@ -139,7 +140,8 @@ nouveau_sdram sdram(
 
 	.RAS(ras),
 	.CAS(cas),
-	.RAMWE(ramwe)
+	.RAMWE(ramwe),
+	.CKE(cke)
 );
 
 wire SLOW = ALLOWFAST ? PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
@@ -171,7 +173,7 @@ assign CLKOUT = ~CLK_OUT_INT;
 assign E = BGK ? E_INT : 1'bz;
 assign VMA = BGK ? VMA_INT : 1'bz;
 
-assign CKE = 1'b1;
+assign CKE = cke;
 assign DQM[1:0] = dqm;
 assign BA[1:0] = ba;
 assign MA[12:0] = ma;
@@ -182,7 +184,7 @@ assign BOE = 1'b0;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
-assign TP[1] = TOS206; 
+assign TP[1] = CKE;
 assign TP[2] = 1'bz; //SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
 assign TP[3] = 1'bz;
 assign TP[4] = 1'bz;

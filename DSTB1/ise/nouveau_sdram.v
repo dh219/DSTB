@@ -20,6 +20,7 @@ module nouveau_sdram(
 	output RAS,
 	output CAS,
 	output RAMWE,
+	output CKE,
 
 	output VALID,
 	output WTERM
@@ -59,32 +60,23 @@ wire LOAD_MODE = 		COUNTER[13:3] == 11'd1042;
 
 localparam [3:0] STATE_IDLE = 'd0;
 localparam [3:0] STATE_READ = 'd1;
-localparam [3:0] STATE_WRITE = 'd2;
-localparam [3:0] STATE_CLOSE	= 'd3;
-localparam [3:0] STATE_ACCESS_WAIT = 'd4;
-localparam [3:0] STATE_REFRESH = 'd5;
-localparam [3:0] STATE_REFRESH_NOP1 = 'd6;
+localparam [3:0] STATE_READ_WAIT = 'd2;
+localparam [3:0] STATE_WRITE = 'd3;
+localparam [3:0] STATE_WRITE_WAIT = 'd4;
+localparam [3:0] STATE_REFRESH_NOP1 = 'd5;
+localparam [3:0] STATE_REFRESH = 'd6;
 localparam [3:0] STATE_REFRESH_NOP2 = 'd7;
-localparam [3:0] STATE_REFRESH_NOP3 = 'd8;
-localparam [3:0] STATE_REFRESH_NOP4 = 'd9;
-localparam [3:0] STATE_REFRESH_NOP5 = 'd10;
-localparam [3:0] STATE_REFRESH_NOP6 = 'd11;
-localparam [3:0] STATE_REFRESH_NOP7 = 'd12;
-localparam [3:0] STATE_REFRESH_NOP8 = 'd13;
-
-localparam [3:0] STATE_READ_HOLD = 'd14;
-localparam [3:0] STATE_WRITE_HOLD = 'd15;
-
 
 reg [3:0] state=0;
-reg [1:0] refresh_wait = 2'b00;
+reg [2:0] refresh_wait = 3'd0;
 reg [1:0] BA_IN;
 reg [1:0] DQM_IN;
+reg CKE_IN = 1'b1;
 
 FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( CMD == CMD_REFRESH ), .Q( refresh_req ) );
 
 // indicate refresh needed and do initialisation
-always @(negedge CLK or negedge RST)  begin
+always @(posedge CLK or negedge RST)  begin
 
 	if (RST == 1'b0) begin 
 		COUNTER 	<= 'd0;
@@ -118,7 +110,7 @@ always @(negedge CLK or negedge RST)  begin
 	end	
 end
 
-always @(negedge CLK)  begin
+always @(posedge CLK)  begin
 	RST <= RST_ASYNC;
 	AS <= AS_ASYNC;
 	UDS <= UDS_ASYNC;
@@ -131,6 +123,7 @@ always @(negedge CLK)  begin
 		MAIN_MA <= SETUP_MA;
 		BA_IN <= 2'b00;
 		DQM_IN <= 2'b11;
+		CKE_IN <= 1'b1;
 	end
 	else begin
 		case(state)
@@ -141,51 +134,61 @@ always @(negedge CLK)  begin
 				end
 				else if( ~AS ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;  // if so activate
-					state <= RW ? STATE_READ : STATE_WRITE_HOLD;
+					state <= RW ? STATE_READ : STATE_WRITE;
 				end
 				else begin
 					CMD <= CMD_NOP;  // otherwise stay idle
 					state <= STATE_IDLE;
 				end
 				MAIN_MA <= { 1'b0, A[22:11] };
+				CKE_IN <= 1'b1;
 			end
 			STATE_READ: begin
 				CMD <= CMD_READ;
-				MAIN_MA <= { 2'b00, (UDS&LDS), 2'b00, A[10:3] }; // no auto-precharge
-				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ;
+//				MAIN_MA <= { 2'b00, (UDS&LDS), 2'b00, A[10:3] }; // no auto-precharge
+				MAIN_MA <= { 5'b00100, A[10:3] }; //  auto-precharge
+//				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ;
+				state <= STATE_READ_WAIT;
+				CKE_IN <= 1'b1; 
 			end
-			STATE_WRITE_HOLD: begin
+			STATE_READ_WAIT: begin
 				CMD <= CMD_NOP;
-				if( ~(UDS&LDS) )
-					state <= STATE_WRITE;
+				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ_WAIT;
+				CKE_IN <= 1'b0; // suspend next clock
 			end
 			STATE_WRITE: begin
 				CMD <= CMD_WRITE;
-				MAIN_MA <= { 3'b001, 2'b00, A[10:3] }; // auto-precharge
-				state <= STATE_ACCESS_WAIT;
+				MAIN_MA <= { 5'b00100, A[10:3] }; // auto-precharge
+				state <= STATE_WRITE_WAIT;
+				CKE_IN <= 1'b1;
 			end
-			STATE_ACCESS_WAIT: begin
+			STATE_WRITE_WAIT: begin
 				CMD <= CMD_NOP;
-				state <= (UDS&LDS) ? STATE_IDLE : STATE_ACCESS_WAIT;
+				state <= (UDS&LDS) ? STATE_IDLE : STATE_WRITE_WAIT;
+				CKE_IN <= 1'b1;
 			end
 			STATE_REFRESH_NOP1: begin
 				CMD <= CMD_NOP;
 				state <= STATE_REFRESH;
+				CKE_IN <= 1'b1;
 			end
 			STATE_REFRESH: begin
 				CMD <= CMD_REFRESH;
 				MAIN_MA[10] 	<= 1'b1;      // precharge all banks
-				refresh_wait <= 2'b11;
+				refresh_wait <= 3'b111;
 				state <= STATE_REFRESH_NOP2;
+				CKE_IN <= 1'b1;
 			end
 			STATE_REFRESH_NOP2: begin
 				CMD <= CMD_NOP;
 				refresh_wait <= refresh_wait - 'd1;
 				state <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
+				CKE_IN <= 1'b1;
 			end
 			default: begin
 				CMD <= CMD_NOP;
 				state <= STATE_IDLE;
+				CKE_IN <= 1'b1;
 			end		
 		endcase
 
@@ -200,7 +203,7 @@ always @(negedge CLK) begin
 	if( UDS&LDS )
 		RdDataValidPipe <= 'd0;
 	else
-		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ };
+		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ | state == STATE_WRITE };
 end
 	
 assign RdDataValid = RdDataValidPipe[trl-1];
@@ -211,7 +214,7 @@ assign MA = MAIN_MA;
 assign RAS = CMD[2];
 assign CAS = CMD[1];
 assign RAMWE = CMD[0];
-
+assign CKE = CKE_IN;
 
 /* fix these next */
 
@@ -221,6 +224,6 @@ assign VALID = READY | valid;
 
 wire wterm;
 FDCP wterm_latch( .D(1'b0), .C( 1'b0), .CLR(CMD == CMD_ACTIVE), .PRE( AS ), .Q( wterm ) );
-assign WTERM = READY | wterm;
+assign WTERM = 1'b1;//READY | wterm;
 
 endmodule
