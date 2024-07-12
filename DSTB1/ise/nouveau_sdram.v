@@ -6,12 +6,11 @@
 
 module nouveau_sdram(
 	input CLK,
-	input CLK8,
-	input RST_ASYNC,
-	input AS_ASYNC,
-	input UDS_ASYNC,
-	input LDS_ASYNC,
-	input RW_ASYNC,
+	input RST,
+	input AS,
+	input UDS,
+	input LDS,
+	input RW,
 	input [23:1] A,
 
 	output [12:0] MA,
@@ -23,7 +22,7 @@ module nouveau_sdram(
 	output CKE,
 
 	output VALID,
-	output WTERM
+	output READY
 );
 
 localparam [2:0] CMD_LOADMODE  = 3'b000;
@@ -37,58 +36,66 @@ localparam [2:0] CMD_NOP       = 3'b111;
 parameter MODE = 13'b0000000100000;
 
 reg [13:0] COUNTER;
-reg READY;
+reg READY_IN;
 reg [2:0] SETUP_CMD;
 reg [2:0] CMD;
 reg REFRESH;
 reg [12:0] SETUP_MA;
 reg [12:0] MAIN_MA;
 
-
-reg RST = 1'b1;
-reg AS = 1'b1;
-reg UDS = 1'b1;
-reg LDS = 1'b1;
-reg RW = 1'b1;
+reg ACTIVE;
+reg UDS_IN;
+reg LDS_IN;
+reg RW_IN;
+always @(posedge CLK) begin
+	ACTIVE <= AS | ( UDS & LDS );
+	UDS_IN <= UDS;
+	LDS_IN <= LDS;
+	RW_IN <= RW;
+end
 
 // startup timing
 // using 66MHZ clock
 // 100us before PRECHARGE (6600 cycles)
-wire PRECHARGE = 		COUNTER[13:3] == 11'd1024; // x1 precharge command
-wire AUTO_REFRESH = 	COUNTER[13:3] == 11'd1030 || COUNTER == 11'd1036;
-wire LOAD_MODE = 		COUNTER[13:3] == 11'd1042;
+wire PRECHARGE = 		COUNTER[13:0] == 'd6600; // x1 precharge command
+wire AUTO_REFRESH = 	COUNTER[13:0] == 'd6700 || COUNTER == 'd6800;
+wire LOAD_MODE = 		COUNTER[13:0] == 'd6900;
 
 localparam [3:0] STATE_IDLE = 'd0;
-localparam [3:0] STATE_READ = 'd1;
-localparam [3:0] STATE_READ_WAIT = 'd2;
-localparam [3:0] STATE_WRITE = 'd3;
-localparam [3:0] STATE_WRITE_WAIT = 'd4;
-localparam [3:0] STATE_REFRESH_NOP1 = 'd5;
-localparam [3:0] STATE_REFRESH = 'd6;
-localparam [3:0] STATE_REFRESH_NOP2 = 'd7;
+localparam [3:0] STATE_OPEN = 'd1;
+localparam [3:0] STATE_READ = 'd2;
+localparam [3:0] STATE_READ_WAIT = 'd3;
+localparam [3:0] STATE_WRITE = 'd4;
+localparam [3:0] STATE_WRITE_WAIT = 'd5;
+localparam [3:0] STATE_REFRESH_NOP1 = 'd6;
+localparam [3:0] STATE_REFRESH = 'd7;
+localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd8;
 
 reg [3:0] state=0;
-reg [2:0] refresh_wait = 3'd0;
+reg [2:0] access_wait = 3'd0;
 reg [1:0] BA_IN;
 reg [1:0] DQM_IN;
 reg CKE_IN = 1'b1;
 
-FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( CMD == CMD_REFRESH ), .Q( refresh_req ) );
+FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( state == STATE_REFRESH ), .Q( refresh_req ) );
 
 // indicate refresh needed and do initialisation
 always @(posedge CLK or negedge RST)  begin
 
 	if (RST == 1'b0) begin 
 		COUNTER 	<= 'd0;
-		READY		<= 'b1;
+		READY_IN		<= 'b1;
 		REFRESH		<= 'b1;
 		SETUP_CMD 		<= CMD_NOP; 
 	end else begin 
 		COUNTER <= COUNTER + 'd1;
-		REFRESH <= (COUNTER[8:0] != 9'h0) | READY;
+//		REFRESH <= (COUNTER[8:0] != 9'h0) | READY_IN; // every 512 cycles (good down to 33MHz)
+//		REFRESH <= (COUNTER[7:0] != 8'h0) | READY_IN; // every 256 cycles (good down to 17MHz)
+		REFRESH <= (COUNTER[6:0] != 7'h0) | READY_IN; // every 128 cycles (good down to 9MHz)
+//		REFRESH <= (COUNTER[5:0] != 6'h0) | READY_IN; // every 64 cycles (good down to 5MHz)
 		SETUP_CMD 	<= CMD_NOP; 
 	
-		if (READY == 1'b1) begin
+		if (READY_IN == 1'b1) begin
 			if(PRECHARGE == 1'b1) begin
 				$display("precharging all banks");
 				SETUP_CMD			<= CMD_PRECHARGE;
@@ -105,20 +112,16 @@ always @(posedge CLK or negedge RST)  begin
 			end
 			// latch when the refresh period is complete
 			// min 2 clock cycles after MODE
-			READY <= COUNTER[13:3] != 11'd1048;
+			READY_IN <= COUNTER[13:0] != 'd7000;
 		end 
 	end	
 end
 
+wire [12:0] CAS_MA = { 5'b00100, A[8:1] }; //  auto-precharge
+
 always @(posedge CLK)  begin
-	RST <= RST_ASYNC;
-	AS <= AS_ASYNC;
-	UDS <= UDS_ASYNC;
-	LDS <= LDS_ASYNC;
-	RW <= RW_ASYNC;
 
-
-	if( READY ) begin
+	if( READY_IN ) begin
 		CMD <= SETUP_CMD;
 		MAIN_MA <= SETUP_MA;
 		BA_IN <= 2'b00;
@@ -126,45 +129,57 @@ always @(posedge CLK)  begin
 		CKE_IN <= 1'b1;
 	end
 	else begin
+
+		if( CKE_IN && access_wait )
+			access_wait <= access_wait - 'd1;
+	
 		case(state)
 			STATE_IDLE: begin
 				if( ~refresh_req ) begin
-					CMD <= CMD_NOP;
 					state <= STATE_REFRESH_NOP1;
+					CMD <= CMD_NOP;  
+					CKE_IN <= 1'b1;
 				end
-				else if( ~AS ) begin  // is there a read or write request?
-					CMD <= CMD_ACTIVE;  // if so activate
-					state <= RW ? STATE_READ : STATE_WRITE;
+				else if( ~ACTIVE ) begin  // is there a read or write request?
+					state <= STATE_OPEN;
+					CMD <= CMD_NOP;  
+					CKE_IN <= 1'b1;
 				end
-				else begin
-					CMD <= CMD_NOP;  // otherwise stay idle
+				else begin  // otherwise stay idle
 					state <= STATE_IDLE;
+					CMD <= CMD_NOP;
+					CKE_IN <= 1'b1;
 				end
-				MAIN_MA <= { 1'b0, A[22:11] };
-				CKE_IN <= 1'b1;
+			end
+			STATE_OPEN: begin
+				CMD <= CMD_ACTIVE;
+				access_wait <= 'd7;
+				MAIN_MA <= { 1'b0, A[20:9] };
+				state <= RW_IN ? STATE_READ : STATE_WRITE;
+				CKE_IN <= 1'b1; 
 			end
 			STATE_READ: begin
 				CMD <= CMD_READ;
-//				MAIN_MA <= { 2'b00, (UDS&LDS), 2'b00, A[10:3] }; // no auto-precharge
-				MAIN_MA <= { 5'b00100, A[10:3] }; //  auto-precharge
-//				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ;
+				MAIN_MA <= CAS_MA;
 				state <= STATE_READ_WAIT;
 				CKE_IN <= 1'b1; 
 			end
 			STATE_READ_WAIT: begin
 				CMD <= CMD_NOP;
-				state <= (UDS&LDS) ? STATE_IDLE : STATE_READ_WAIT;
+				MAIN_MA <= CAS_MA;
+				state <= ACTIVE ? STATE_ACCESS_WAIT_NOP : STATE_READ_WAIT;
 				CKE_IN <= 1'b0; // suspend next clock
 			end
 			STATE_WRITE: begin
 				CMD <= CMD_WRITE;
-				MAIN_MA <= { 5'b00100, A[10:3] }; // auto-precharge
+				MAIN_MA <= CAS_MA;
 				state <= STATE_WRITE_WAIT;
 				CKE_IN <= 1'b1;
 			end
 			STATE_WRITE_WAIT: begin
 				CMD <= CMD_NOP;
-				state <= (UDS&LDS) ? STATE_IDLE : STATE_WRITE_WAIT;
+				MAIN_MA <= CAS_MA;
+				state <= ACTIVE ? STATE_ACCESS_WAIT_NOP : STATE_WRITE_WAIT;
 				CKE_IN <= 1'b1;
 			end
 			STATE_REFRESH_NOP1: begin
@@ -175,14 +190,14 @@ always @(posedge CLK)  begin
 			STATE_REFRESH: begin
 				CMD <= CMD_REFRESH;
 				MAIN_MA[10] 	<= 1'b1;      // precharge all banks
-				refresh_wait <= 3'b111;
-				state <= STATE_REFRESH_NOP2;
+				access_wait <= 3'b111;
+				state <= STATE_ACCESS_WAIT_NOP;
 				CKE_IN <= 1'b1;
 			end
-			STATE_REFRESH_NOP2: begin
+			STATE_ACCESS_WAIT_NOP: begin
 				CMD <= CMD_NOP;
-				refresh_wait <= refresh_wait - 'd1;
-				state <= refresh_wait ? STATE_REFRESH_NOP2 : STATE_IDLE;
+				MAIN_MA <= CAS_MA;
+				state <= access_wait ? STATE_ACCESS_WAIT_NOP : STATE_IDLE;
 				CKE_IN <= 1'b1;
 			end
 			default: begin
@@ -192,21 +207,20 @@ always @(posedge CLK)  begin
 			end		
 		endcase
 
-		DQM_IN <= { UDS, LDS };
-		BA_IN <= A[2:1];
+//		DQM_IN <= ACTIVE ? 2'b11 : { UDS_IN, LDS_IN };
+		DQM_IN <= { UDS_IN, LDS_IN };
+		BA_IN <= A[22:21];
 	end
 end
 
 localparam trl = 4;  // total read latency is the SDRAM CAS-latency (two) plus the SDRAM controller induced latency (two)
 reg [trl-1:0] RdDataValidPipe;  
-always @(negedge CLK) begin
-	if( UDS&LDS )
+always @(posedge CLK) begin
+	if( ACTIVE )
 		RdDataValidPipe <= 'd0;
 	else
 		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ | state == STATE_WRITE };
 end
-	
-assign RdDataValid = RdDataValidPipe[trl-1];
 
 assign DQM = DQM_IN;
 assign BA = BA_IN;
@@ -218,12 +232,8 @@ assign CKE = CKE_IN;
 
 /* fix these next */
 
-wire valid;
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValid ), .PRE( AS ), .Q( valid ) );
-assign VALID = READY | valid;
-
-wire wterm;
-FDCP wterm_latch( .D(1'b0), .C( 1'b0), .CLR(CMD == CMD_ACTIVE), .PRE( AS ), .Q( wterm ) );
-assign WTERM = 1'b1;//READY | wterm;
-
+//wire valid;
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
+assign VALID = READY_IN | valid;
+assign READY = READY_IN;
 endmodule

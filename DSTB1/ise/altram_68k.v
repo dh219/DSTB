@@ -52,10 +52,14 @@ reg CLKOSC_4 = 1'b1;
 always @(posedge CLKOSC_2 ) begin
 	CLKOSC_4 <= ~CLKOSC_4;
 end
+reg CLKOSC_8 = 1'b1;
+always @(posedge CLKOSC_4 ) begin
+	CLKOSC_8 <= ~CLKOSC_8;
+end
 
-reg ALLOWFAST = 1'b1;
+reg ALLOWFAST = 1'b0;
 always @( posedge RST ) begin
-	ALLOWFAST <= TP[3];
+//	ALLOWFAST <= TP[3];
 end
 
 /* RAM */
@@ -98,11 +102,10 @@ wire [1:0] dqm;
 wire ras;
 wire cas;
 wire ramwe;
-wire sdram_valid;
 wire cke;
+wire ready;
 
-wire altram_access_int = (UDS&LDS) | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
-wire altram_access_ext = AS | ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire altram_access_int = ENABLE | AS_INT | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
 
 reg PSG_DTACK;
@@ -122,18 +125,18 @@ end
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
-	.CLK8(CLK8),
-	.RST_ASYNC(RST),
+//	.CLK8(CLK8),
+	.RST(RST),
 	
-	.AS_ASYNC( altram_access_int ),
-	.UDS_ASYNC(UDS),
-	.LDS_ASYNC(LDS),
-	.RW_ASYNC(RW),
+	.AS( altram_access_int ),
+	.UDS(UDS),
+	.LDS(LDS),
+	.RW(RW),
 	
-	.A( { REWRITE_A2320, A[19:1] } ),
+//	.A( { REWRITE_A2320, A[19:1] } ),
+	.A( A[23:1] ),
 	.VALID(sdram_valid),
-	.WTERM(sdram_wterm),
-	
+
 	.MA(ma),
 	.BA(ba),
 	.DQM(dqm),
@@ -141,10 +144,11 @@ nouveau_sdram sdram(
 	.RAS(ras),
 	.CAS(cas),
 	.RAMWE(ramwe),
-	.CKE(cke)
+	.CKE(cke),
+	.READY(ready)
 );
 
-wire SLOW = ALLOWFAST ? PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
+wire SLOW = ALLOWFAST ? BGK & PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
@@ -156,19 +160,19 @@ clockmux mod_clock (
 );
 
 /* assignments */
-assign DTACK = (BGK | (sdram_valid & sdram_wterm & dtack_tos206) )  ? 1'bz : 1'b0;
+assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 
 //assign AS_INT = BGK ? 1'bz : AS;
 
 wire newas = altram_access_int ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
-assign DTACK_INT = DTACK & reg_dtack & sdram_valid & sdram_wterm & dtack_tos206;
+assign DTACK_INT = DTACK & reg_dtack & sdram_valid & dtack_tos206;
 
 assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
-assign RAMCLK = CLKOSC;
-assign CLKOUT = ~CLK_OUT_INT;
-//assign CLKOUT = CLK8;
+//assign RAMCLK = CLKOSC;
+assign RAMCLK = CLKOSC_4;
+assign CLKOUT = CLK8;//~CLK_OUT_INT;
 
 assign E = BGK ? E_INT : 1'bz;
 assign VMA = BGK ? VMA_INT : 1'bz;
@@ -180,16 +184,20 @@ assign MA[12:0] = ma;
 assign RAMWE = ramwe;
 assign CAS = cas;
 assign RAS = ras;
-assign BOE = 1'b0;
+
+reg boe;
+always @( negedge CLKOUT )
+	boe <= altram_access_int;
+assign BOE = boe;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
 assign TP[1] = CKE;
 assign TP[2] = 1'bz; //SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
-assign TP[3] = 1'bz;
-assign TP[4] = 1'bz;
-assign TP[5] = 1'bz;
+assign TP[3] = altram_access_int;
+assign TP[4] = ras;
+assign TP[5] = cas;
 
-assign LED = sdram_valid & sdram_wterm;
+assign LED = sdram_valid;
 
 endmodule
