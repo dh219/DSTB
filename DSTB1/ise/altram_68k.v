@@ -57,7 +57,7 @@ always @(posedge CLKOSC_4 ) begin
 	CLKOSC_8 <= ~CLKOSC_8;
 end
 
-reg ALLOWFAST = 1'b0;
+reg ALLOWFAST = 1'b1;
 always @( posedge RST ) begin
 //	ALLOWFAST <= TP[3];
 end
@@ -170,9 +170,9 @@ assign DTACK_INT = DTACK & reg_dtack & sdram_valid & dtack_tos206;
 
 assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
-//assign RAMCLK = CLKOSC;
-assign RAMCLK = CLKOSC_4;
-assign CLKOUT = CLK8;//~CLK_OUT_INT;
+assign RAMCLK = CLKOSC;
+//assign RAMCLK = CLKOSC_4;
+assign CLKOUT = ~CLK_OUT_INT;
 
 assign E = BGK ? E_INT : 1'bz;
 assign VMA = BGK ? VMA_INT : 1'bz;
