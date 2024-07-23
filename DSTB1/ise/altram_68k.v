@@ -43,6 +43,11 @@ module altram_68k (
 	output LED
  );
 
+wire BR;
+
+reg RESET_IN = 1'b0;
+always @( posedge RST )
+	RESET_IN <= 1'b1; // latch after first
 
 reg CLKOSC_2 = 1'b1;
 always @(posedge CLKOSC ) begin
@@ -58,15 +63,19 @@ always @(posedge CLKOSC_4 ) begin
 end
 
 reg ALLOWFAST = 1'b1;
-always @( posedge RST ) begin
-//	ALLOWFAST <= TP[3];
+
+// 4 seems close to ideal
+localparam shift = 4;  
+reg [shift-1:0] CLK_D = 'd0;
+always @( negedge CLKOSC ) begin
+	CLK_D <= { CLK_D[shift-2:0], ~CLK8 };
 end
+
 
 /* RAM */
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
-wire rom_access = ROM_DECODE | ( A[23:20] != 4'he );
 
 wire AS_COMBINED = AS_INT & AS;
 
@@ -74,13 +83,21 @@ always @( negedge AS_INT or negedge RST ) begin
 	if( ~RST ) begin
 		reg_dtack <= 1'b1;
 		ENABLE <= 1'b1;
-		ROM_DECODE <= 1'b1;
+//		ROM_DECODE <= 1'b1;
 	end
 	else begin
 		if( A[23:4] == 20'hFFFE0 ) begin
 //		if( A[23:4] == 20'hFFFE1 ) begin
-			if( A[3:1] == 3'h7 ) begin
+			if( A[3:1] == 3'h7 ) begin // fffe0e
 				ROM_DECODE <= 1'b0;
+				reg_dtack <= 1'b0;
+			end
+			else if(  A[3:1] == 3'h6 ) begin // fffe0c
+				ALLOWFAST <= 1'b1;
+				reg_dtack <= 1'b0;
+			end
+			else if(  A[3:1] == 3'h5 ) begin // fffe0a
+				ALLOWFAST <= 1'b0;
 				reg_dtack <= 1'b0;
 			end
 			else			begin
@@ -105,7 +122,9 @@ wire ramwe;
 wire cke;
 wire ready;
 
-wire altram_access_int = ENABLE | AS_INT | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 ) & rom_access;
+wire altram_access =  ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire rom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
+wire altram_access_int =  AS_INT | ( altram_access & rom_access );
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
 
 reg PSG_DTACK;
@@ -113,9 +132,9 @@ always @( negedge DTACK ) begin
 	PSG_DTACK <= ( A[23:8] != 16'hFF88 );
 end
 
-wire TOS206 = AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) );
+wire TOS206 = rom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
 reg [1:0] dtack_tos206 = 1'b1;
-always @( negedge CLK8 ) begin
+always @( negedge CLKOSC ) begin
 	if( AS_COMBINED )
 		dtack_tos206 <= 2'b11;
 	else
@@ -125,7 +144,7 @@ end
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
-//	.CLK8(CLK8),
+//	.RST(RST_IN),
 	.RST(RST),
 	
 	.AS( altram_access_int ),
@@ -133,8 +152,8 @@ nouveau_sdram sdram(
 	.LDS(LDS),
 	.RW(RW),
 	
-//	.A( { REWRITE_A2320, A[19:1] } ),
-	.A( A[23:1] ),
+	.A( { REWRITE_A2320, A[19:1] } ),
+//	.A( A[23:1] ),
 	.VALID(sdram_valid),
 
 	.MA(ma),
@@ -148,16 +167,27 @@ nouveau_sdram sdram(
 	.READY(ready)
 );
 
-wire SLOW = ALLOWFAST ? BGK & PSG_DTACK & ( AS_INT | ~altram_access_int ) : 1'b0;
+reg [7:0] BGK_D = 'hff;
+always @( negedge AS_INT or negedge BGK ) begin
+	if( ~BGK )
+		BGK_D <= 'd0;
+	else
+		BGK_D <= { BGK_D[6:0], 1'b1 };
+end
+
+
+wire SLOW = ALLOWFAST ? BR & BGK & /*PSG_DTACK & */( AS_INT | ~altram_access_int ) : 1'b0;
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
-	.clk1( ~CLK8 ),
+//	.clk1( ~CLK8 ),
+	.clk1( ~CLK_D[shift-1] ),
 	.select( SLOW ), // high = clk0
 	.active0( FASTACTIVE ),
 	.active1( SLOWACTIVE ),
 	.out_clock( CLK_OUT_INT )
 );
+
 
 /* assignments */
 assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
@@ -166,13 +196,13 @@ assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 
 wire newas = altram_access_int ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
-assign DTACK_INT = DTACK & reg_dtack & sdram_valid & dtack_tos206;
+assign DTACK_INT = (~altram_access_int|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
 
 assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
 assign RAMCLK = CLKOSC;
-//assign RAMCLK = CLKOSC_4;
 assign CLKOUT = ~CLK_OUT_INT;
+//assign CLKOUT = CLK_D[shift-1];
 
 assign E = BGK ? E_INT : 1'bz;
 assign VMA = BGK ? VMA_INT : 1'bz;
@@ -191,9 +221,10 @@ always @( negedge CLKOUT )
 assign BOE = boe;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
+assign BR = TP[2];
 
 assign TP[1] = CKE;
-assign TP[2] = 1'bz; //SLOWACTIVE;//(UDS&LDS) | ( A[23:20] != 4'hc );
+assign TP[2] = 1'bz; //TOS206 ? 1'bz : 1'b0;
 assign TP[3] = altram_access_int;
 assign TP[4] = ras;
 assign TP[5] = cas;

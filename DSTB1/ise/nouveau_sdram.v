@@ -62,14 +62,10 @@ wire AUTO_REFRESH = 	COUNTER[13:0] == 'd6700 || COUNTER == 'd6800;
 wire LOAD_MODE = 		COUNTER[13:0] == 'd6900;
 
 localparam [3:0] STATE_IDLE = 'd0;
-localparam [3:0] STATE_OPEN = 'd1;
+localparam [3:0] STATE_REFRESH = 'd1;
 localparam [3:0] STATE_READ = 'd2;
 localparam [3:0] STATE_READ_WAIT = 'd3;
-localparam [3:0] STATE_WRITE = 'd4;
-localparam [3:0] STATE_WRITE_WAIT = 'd5;
-localparam [3:0] STATE_REFRESH_NOP1 = 'd6;
-localparam [3:0] STATE_REFRESH = 'd7;
-localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd8;
+localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd4;
 
 reg [3:0] state=0;
 reg [2:0] access_wait = 3'd0;
@@ -89,9 +85,9 @@ always @(posedge CLK or negedge RST)  begin
 		SETUP_CMD 		<= CMD_NOP; 
 	end else begin 
 		COUNTER <= COUNTER + 'd1;
-//		REFRESH <= (COUNTER[8:0] != 9'h0) | READY_IN; // every 512 cycles (good down to 33MHz)
+		REFRESH <= (COUNTER[8:0] != 9'h0) | READY_IN; // every 512 cycles (good down to 33MHz)
 //		REFRESH <= (COUNTER[7:0] != 8'h0) | READY_IN; // every 256 cycles (good down to 17MHz)
-		REFRESH <= (COUNTER[6:0] != 7'h0) | READY_IN; // every 128 cycles (good down to 9MHz)
+//		REFRESH <= (COUNTER[6:0] != 7'h0) | READY_IN; // every 128 cycles (good down to 9MHz)
 //		REFRESH <= (COUNTER[5:0] != 6'h0) | READY_IN; // every 64 cycles (good down to 5MHz)
 		SETUP_CMD 	<= CMD_NOP; 
 	
@@ -136,14 +132,16 @@ always @(posedge CLK)  begin
 		case(state)
 			STATE_IDLE: begin
 				if( ~refresh_req ) begin
-					state <= STATE_REFRESH_NOP1;
+					state <= STATE_REFRESH;
 					CMD <= CMD_NOP;  
 					CKE_IN <= 1'b1;
 				end
 				else if( ~ACTIVE ) begin  // is there a read or write request?
-					state <= STATE_OPEN;
-					CMD <= CMD_NOP;  
-					CKE_IN <= 1'b1;
+					CMD <= CMD_ACTIVE;
+					access_wait <= 'd7;
+					MAIN_MA <= { 1'b0, A[20:9] };
+					state <= STATE_READ;
+					CKE_IN <= 1'b1; 
 				end
 				else begin  // otherwise stay idle
 					state <= STATE_IDLE;
@@ -151,17 +149,10 @@ always @(posedge CLK)  begin
 					CKE_IN <= 1'b1;
 				end
 			end
-			STATE_OPEN: begin
-				CMD <= CMD_ACTIVE;
-				access_wait <= 'd7;
-				MAIN_MA <= { 1'b0, A[20:9] };
-				state <= RW_IN ? STATE_READ : STATE_WRITE;
-				CKE_IN <= 1'b1; 
-			end
 			STATE_READ: begin
-				CMD <= CMD_READ;
+				CMD <= RW_IN ? CMD_READ : CMD_WRITE;
 				MAIN_MA <= CAS_MA;
-				state <= STATE_READ_WAIT;
+				state <= RW_IN ? STATE_READ_WAIT : STATE_ACCESS_WAIT_NOP;
 				CKE_IN <= 1'b1; 
 			end
 			STATE_READ_WAIT: begin
@@ -169,23 +160,6 @@ always @(posedge CLK)  begin
 				MAIN_MA <= CAS_MA;
 				state <= ACTIVE ? STATE_ACCESS_WAIT_NOP : STATE_READ_WAIT;
 				CKE_IN <= 1'b0; // suspend next clock
-			end
-			STATE_WRITE: begin
-				CMD <= CMD_WRITE;
-				MAIN_MA <= CAS_MA;
-				state <= STATE_WRITE_WAIT;
-				CKE_IN <= 1'b1;
-			end
-			STATE_WRITE_WAIT: begin
-				CMD <= CMD_NOP;
-				MAIN_MA <= CAS_MA;
-				state <= ACTIVE ? STATE_ACCESS_WAIT_NOP : STATE_WRITE_WAIT;
-				CKE_IN <= 1'b1;
-			end
-			STATE_REFRESH_NOP1: begin
-				CMD <= CMD_NOP;
-				state <= STATE_REFRESH;
-				CKE_IN <= 1'b1;
 			end
 			STATE_REFRESH: begin
 				CMD <= CMD_REFRESH;
@@ -207,8 +181,7 @@ always @(posedge CLK)  begin
 			end		
 		endcase
 
-//		DQM_IN <= ACTIVE ? 2'b11 : { UDS_IN, LDS_IN };
-		DQM_IN <= { UDS_IN, LDS_IN };
+		DQM_IN <= ACTIVE ? 2'b11 : { UDS_IN, LDS_IN };
 		BA_IN <= A[22:21];
 	end
 end
@@ -219,7 +192,7 @@ always @(posedge CLK) begin
 	if( ACTIVE )
 		RdDataValidPipe <= 'd0;
 	else
-		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ | state == STATE_WRITE };
+		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ  };
 end
 
 assign DQM = DQM_IN;
@@ -234,6 +207,8 @@ assign CKE = CKE_IN;
 
 //wire valid;
 FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	// this assumes the SDRAM clock speed is sufficently high that the SDRAM read latency is over before the CPU can act on DTACK
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	// this assumes the SDRAM clock speed is sufficently high that the SDRAM read latency is over before the CPU can act on DTACK
 assign VALID = READY_IN | valid;
 assign READY = READY_IN;
 endmodule
