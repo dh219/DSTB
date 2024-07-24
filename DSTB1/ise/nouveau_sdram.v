@@ -206,9 +206,13 @@ assign CKE = CKE_IN;
 /* fix these next */
 
 //wire valid;
+// this is the technically correct one -- only assert DTACK when data is genuinely on the bus
 FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	// this assumes the SDRAM clock speed is sufficently high that the SDRAM read latency is over before the CPU can act on DTACK
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	// this assumes the SDRAM clock speed is sufficently high that the SDRAM read latency is over before the CPU can act on DTACK
+
+// these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	
+
 assign VALID = READY_IN | valid;
 assign READY = READY_IN;
 endmodule

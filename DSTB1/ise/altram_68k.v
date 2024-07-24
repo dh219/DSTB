@@ -15,7 +15,7 @@ module altram_68k (
 
 	input BGK,
 	input RST,
-	inout BERR,
+	input BERR,
 
 	input CLKOSC,
 	input CLK8,
@@ -43,7 +43,8 @@ module altram_68k (
 	output LED
  );
 
-wire BR;
+wire BGI;
+wire BGO;
 
 reg RESET_IN = 1'b0;
 always @( posedge RST )
@@ -64,8 +65,9 @@ end
 
 reg ALLOWFAST = 1'b1;
 
-// 4 seems close to ideal
-localparam shift = 4;  
+// 4 seems close to ideal with old switching
+// 3 closer with SJL switching
+localparam shift = 3;  
 reg [shift-1:0] CLK_D = 'd0;
 always @( negedge CLKOSC ) begin
 	CLK_D <= { CLK_D[shift-2:0], ~CLK8 };
@@ -166,7 +168,7 @@ nouveau_sdram sdram(
 	.CKE(cke),
 	.READY(ready)
 );
-
+/*
 reg [7:0] BGK_D = 'hff;
 always @( negedge AS_INT or negedge BGK ) begin
 	if( ~BGK )
@@ -174,10 +176,12 @@ always @( negedge AS_INT or negedge BGK ) begin
 	else
 		BGK_D <= { BGK_D[6:0], 1'b1 };
 end
+*/
 
-
-wire SLOW = ALLOWFAST ? BR & BGK & /*PSG_DTACK & */( AS_INT | ~altram_access_int ) : 1'b0;
+wire SLOW = ALLOWFAST ? BGI & BGK & /*PSG_DTACK & */( AS_INT | ~altram_access_int ) : 1'b0;
+/*
 wire CLK_OUT_INT;
+
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
 //	.clk1( ~CLK8 ),
@@ -187,6 +191,14 @@ clockmux mod_clock (
 	.active1( SLOWACTIVE ),
 	.out_clock( CLK_OUT_INT )
 );
+*/
+reg CLK_OUT_INT;
+always @( negedge CLKOSC_2 ) begin
+	if( SLOW )
+		CLK_OUT_INT <= ~CLKOSC_4;
+	else
+		CLK_OUT_INT <= ~CLK_D[shift-1];
+end
 
 
 /* assignments */
@@ -197,8 +209,6 @@ assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 wire newas = altram_access_int ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
 assign DTACK_INT = (~altram_access_int|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
-
-assign BERR = 1'bz;// BGK | altram_access_ext  ? 1'bz : 1'b0;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
@@ -221,13 +231,27 @@ always @( negedge CLKOUT )
 assign BOE = boe;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
-assign BR = TP[2];
 
-assign TP[1] = CKE;
-assign TP[2] = 1'bz; //TOS206 ? 1'bz : 1'b0;
-assign TP[3] = altram_access_int;
-assign TP[4] = ras;
-assign TP[5] = cas;
+reg BGO_IN = 1'b1;
+always @( negedge CLKOSC or posedge BGI ) begin
+	if( BGI )
+		BGO_IN <= 1'b1;
+	else begin
+		if( AS_INT )
+			BGO_IN <= 1'b0;
+		else
+			BGO_IN <= BGO_IN;
+	end
+end
+
+assign BGI = TP[5];
+assign BGO = BGO_IN;
+
+assign TP[1] = TOS206;
+assign TP[2] = 1'bz;
+assign TP[3] = CKE;
+assign TP[4] = BGO;
+assign TP[5] = 1'bz; //BGI;
 
 assign LED = sdram_valid;
 
