@@ -129,9 +129,9 @@ wire rom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
 wire altram_access_int =  AS_INT | ( altram_access & rom_access );
 wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
 
-reg PSG_DTACK;
-always @( negedge DTACK ) begin
-	PSG_DTACK <= ( A[23:8] != 16'hFF88 );
+reg PSG = 1'b1;
+always @( negedge AS_INT ) begin
+	PSG <= ( A[23:8] != 16'hFF88 );
 end
 
 wire TOS206 = rom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
@@ -178,7 +178,7 @@ always @( negedge AS_INT or negedge BGK ) begin
 end
 */
 
-wire SLOW = ALLOWFAST ? BGI & BGK & /*PSG_DTACK & */( AS_INT | ~altram_access_int ) : 1'b0;
+wire SLOW = ALLOWFAST ? BGO & BGK & PSG & ( AS_INT | ~altram_access_int ) : 1'b0;
 /*
 wire CLK_OUT_INT;
 
