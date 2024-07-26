@@ -125,16 +125,16 @@ wire cke;
 wire ready;
 
 wire altram_access =  ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
-wire rom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
-wire altram_access_int =  AS_INT | ( altram_access & rom_access );
-wire [3:0] REWRITE_A2320 = rom_access ? A[23:20] : 4'hB;
+wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
+wire sdram_access =  AS_INT | ( altram_access & altrom_access );
+wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 reg PSG = 1'b1;
 always @( negedge AS_INT ) begin
 	PSG <= ( A[23:8] != 16'hFF88 );
 end
 
-wire TOS206 = rom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
+wire TOS206 = altrom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
 reg [1:0] dtack_tos206 = 1'b1;
 always @( negedge CLKOSC ) begin
 	if( AS_COMBINED )
@@ -149,7 +149,7 @@ nouveau_sdram sdram(
 //	.RST(RST_IN),
 	.RST(RST),
 	
-	.AS( altram_access_int ),
+	.AS( sdram_access ),
 	.UDS(UDS),
 	.LDS(LDS),
 	.RW(RW),
@@ -178,7 +178,7 @@ always @( negedge AS_INT or negedge BGK ) begin
 end
 */
 
-wire SLOW = ALLOWFAST ? BGO & BGK & PSG & ( AS_INT | ~altram_access_int ) : 1'b0;
+wire SLOW = ALLOWFAST ? BGO & BGK & PSG & ( AS_INT | ~sdram_access ) : 1'b0;
 /*
 wire CLK_OUT_INT;
 
@@ -204,11 +204,9 @@ end
 /* assignments */
 assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 
-//assign AS_INT = BGK ? 1'bz : AS;
-
-wire newas = altram_access_int ? AS_INT : 1'b1;
+wire newas = sdram_access ? AS_INT : 1'b1;
 assign AS = BGK ? newas : 1'bz;
-assign DTACK_INT = (~altram_access_int|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
+assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
@@ -227,7 +225,7 @@ assign RAS = ras;
 
 reg boe;
 always @( negedge CLKOUT )
-	boe <= altram_access_int;
+	boe <= sdram_access;
 assign BOE = boe;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
