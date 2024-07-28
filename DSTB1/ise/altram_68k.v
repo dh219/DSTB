@@ -43,6 +43,7 @@ module altram_68k (
 	output LED
  );
 
+wire AS_COMBINED = BGK ? AS_INT : AS;
 wire BGI;
 wire BGO;
 
@@ -75,12 +76,13 @@ end
 // synthesized 8MHz system clock
 wire CLK8_SYN = CLK_D[shift-1];
 
+wire BGK_IN;
+FDCP bgk_ff( .D( 1'b1 ), .C( 1'b1 ), .CLR( ~BGK ), .PRE( AS_COMBINED & BGK ), .Q( BGK_IN ) );
+
 /* RAM */
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
-
-wire AS_COMBINED = BGK ? AS_INT : AS;
 
 always @( negedge AS_INT or negedge RST ) begin
 	if( ~RST ) begin
@@ -179,7 +181,7 @@ always @( negedge AS_INT or negedge BGK ) begin
 end
 */
 
-wire SLOW = ALLOWFAST ? BGO & BGK & PSG & ( AS_INT | ~sdram_access ) : 1'b0;
+wire SLOW = ALLOWFAST ? BGO & BGK_IN & PSG & ( AS_INT | ~sdram_access ) : 1'b0;
 /*
 wire CLK_OUT_INT;
 
@@ -203,18 +205,18 @@ end
 
 
 /* assignments */
-assign DTACK = (BGK | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
+assign DTACK = (BGK_IN| (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 
 wire newas = sdram_access ? AS_INT : 1'b1;
-assign AS = BGK ? newas : 1'bz;
+assign AS = BGK_IN ? newas : 1'bz;
 assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
 //assign CLKOUT = CLK_D[shift-1];
 
-assign E = BGK ? E_INT : 1'bz;
-assign VMA = BGK ? VMA_INT : 1'bz;
+assign E = BGK_IN ? E_INT : 1'bz;
+assign VMA = BGK_IN ? VMA_INT : 1'bz;
 
 assign CKE = cke;
 assign DQM[1:0] = dqm;
@@ -246,8 +248,11 @@ end
 assign BGI = TP[5];
 assign BGO = BGO_IN;
 
+wire video = ( ( A[23:1] != 'h7FC100 ) & ( A[23:1] != 'h7FC101 ) ) | AS_INT | RW; // FF8200 + 802 right shifted one. Address strobe valid and write.
+
+
 assign TP[1] = TOS206;
-assign TP[2] = 1'bz;
+assign TP[2] = ~video;
 assign TP[3] = CKE;
 assign TP[4] = BGO;
 assign TP[5] = 1'bz; //BGI;
