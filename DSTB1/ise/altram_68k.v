@@ -72,14 +72,15 @@ reg [shift-1:0] CLK_D = 'd0;
 always @( negedge CLKOSC ) begin
 	CLK_D <= { CLK_D[shift-2:0], ~CLK8 };
 end
-
+// synthesized 8MHz system clock
+wire CLK8_SYN = CLK_D[shift-1];
 
 /* RAM */
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
 
-wire AS_COMBINED = AS_INT & AS;
+wire AS_COMBINED = BGK ? AS_INT : AS;
 
 always @( negedge AS_INT or negedge RST ) begin
 	if( ~RST ) begin
@@ -124,9 +125,9 @@ wire ramwe;
 wire cke;
 wire ready;
 
-wire altram_access =  ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
-wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
-wire sdram_access =  AS_INT | ( altram_access & altrom_access );
+wire altram_access =  ENABLE | AS_COMBINED | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire altrom_access = ROM_DECODE | AS_INT | ( A[23:20] != 4'he & A[23:3] != 'd0 );
+wire sdram_access =  ( altram_access & altrom_access );
 wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 reg PSG = 1'b1;
@@ -136,7 +137,7 @@ end
 
 wire TOS206 = altrom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
 reg [1:0] dtack_tos206 = 1'b1;
-always @( negedge CLKOSC ) begin
+always @( negedge CLKOSC_2 ) begin
 	if( AS_COMBINED )
 		dtack_tos206 <= 2'b11;
 	else
@@ -197,7 +198,7 @@ always @( negedge CLKOSC_2 ) begin
 	if( SLOW )
 		CLK_OUT_INT <= ~CLKOSC_4;
 	else
-		CLK_OUT_INT <= ~CLK_D[shift-1];
+		CLK_OUT_INT <= ~CLK8_SYN;
 end
 
 

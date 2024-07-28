@@ -48,7 +48,7 @@ reg UDS_IN;
 reg LDS_IN;
 reg RW_IN;
 always @(posedge CLK) begin
-	ACTIVE <= AS | ( UDS & LDS );
+	ACTIVE <= AS | ( UDS & LDS ); // when I use UDS_IN here, blitter artefacting gets worse. Interesting.
 	UDS_IN <= UDS;
 	LDS_IN <= LDS;
 	RW_IN <= RW;
@@ -63,7 +63,7 @@ wire LOAD_MODE = 		COUNTER[13:0] == 'd6900;
 
 localparam [3:0] STATE_IDLE = 'd0;
 localparam [3:0] STATE_REFRESH = 'd1;
-localparam [3:0] STATE_READ = 'd2;
+localparam [3:0] STATE_RW = 'd2;
 localparam [3:0] STATE_READ_WAIT = 'd3;
 localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd4;
 
@@ -140,7 +140,7 @@ always @(posedge CLK)  begin
 					CMD <= CMD_ACTIVE;
 					access_wait <= 'd7;
 					MAIN_MA <= { 1'b0, A[20:9] };
-					state <= STATE_READ;
+					state <= STATE_RW;
 					CKE_IN <= 1'b1; 
 				end
 				else begin  // otherwise stay idle
@@ -149,7 +149,7 @@ always @(posedge CLK)  begin
 					CKE_IN <= 1'b1;
 				end
 			end
-			STATE_READ: begin
+			STATE_RW: begin
 				CMD <= RW_IN ? CMD_READ : CMD_WRITE;
 				MAIN_MA <= CAS_MA;
 				state <= RW_IN ? STATE_READ_WAIT : STATE_ACCESS_WAIT_NOP;
@@ -192,7 +192,8 @@ always @(posedge CLK) begin
 	if( ACTIVE )
 		RdDataValidPipe <= 'd0;
 	else
-		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_READ  };
+		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_RW  };
+
 end
 
 assign DQM = DQM_IN;
@@ -205,13 +206,15 @@ assign CKE = CKE_IN;
 
 /* fix these next */
 
+wire valid_trigger = RW ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
 //wire valid;
 // this is the technically correct one -- only assert DTACK when data is genuinely on the bus
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( ACTIVE ), .Q( valid ) );
 
 // these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	
 
 assign VALID = READY_IN | valid;
 assign READY = READY_IN;
