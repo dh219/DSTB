@@ -52,16 +52,11 @@ always @( posedge RST )
 	RESET_IN <= 1'b1; // latch after first
 
 reg CLKOSC_2 = 1'b1;
-always @(posedge CLKOSC ) begin
-	CLKOSC_2 <= ~CLKOSC_2;
-end
 reg CLKOSC_4 = 1'b1;
-always @(posedge CLKOSC_2 ) begin
-	CLKOSC_4 <= ~CLKOSC_4;
-end
-reg CLKOSC_8 = 1'b1;
-always @(posedge CLKOSC_4 ) begin
-	CLKOSC_8 <= ~CLKOSC_8;
+always @(posedge CLKOSC ) begin
+	if( CLKOSC_2 )
+		CLKOSC_4 <= ~CLKOSC_4;
+	CLKOSC_2 <= ~CLKOSC_2;
 end
 
 reg ALLOWFAST = 1'b1;
@@ -182,9 +177,10 @@ end
 */
 
 wire SLOW = ALLOWFAST ? BGO & BGK_IN & PSG & ( AS_INT | ~sdram_access ) : 1'b0;
+
+`ifdef OLDCLK
 /*
 wire CLK_OUT_INT;
-
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
 //	.clk1( ~CLK8 ),
@@ -195,14 +191,17 @@ clockmux mod_clock (
 	.out_clock( CLK_OUT_INT )
 );
 */
+`else
 reg CLK_OUT_INT;
-always @( negedge CLKOSC_2 ) begin
-	if( SLOW )
-		CLK_OUT_INT <= ~CLKOSC_4;
-	else
-		CLK_OUT_INT <= ~CLK8_SYN;
+always @( negedge CLKOSC ) begin
+	if( CLKOSC_2 ) begin
+		if( SLOW )
+			CLK_OUT_INT <= ~CLKOSC_4;
+		else
+			CLK_OUT_INT <= ~CLK8_SYN;
+	end
 end
-
+`endif
 
 /* assignments */
 assign DTACK = (BGK_IN| (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
