@@ -141,13 +141,18 @@ always @( negedge CLKOSC_2 ) begin
 		dtack_tos206 <= {dtack_tos206[0],TOS206};
 end
 
+reg [3:0] AS_BGK_D;
+always @( posedge CLKOSC ) begin
+	AS_BGK_D[3:0] <= { AS_BGK_D[2:0], BGK ? 1'b1 : AS };
+end
+
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
 //	.RST(RST_IN),
 	.RST(RST),
 	
-	.AS( sdram_access ),
+	.AS( BGK | ~RW ? sdram_access : sdram_access | AS_BGK_D[3] ), // this is a really shonky test to delay blitter reads whilst making writes as fast as possible
 	.UDS(UDS),
 	.LDS(LDS),
 	.RW(RW),

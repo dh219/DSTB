@@ -43,16 +43,11 @@ reg REFRESH;
 reg [12:0] SETUP_MA;
 reg [12:0] MAIN_MA;
 
-reg ACTIVE;
+reg AS_IN;
+reg DS_IN;
 reg UDS_IN;
 reg LDS_IN;
 reg RW_IN;
-always @(posedge CLK) begin
-	ACTIVE <= AS | ( UDS & LDS ); // when I use UDS_IN here, blitter artefacting gets worse. Interesting.
-	UDS_IN <= UDS;
-	LDS_IN <= LDS;
-	RW_IN <= RW;
-end
 
 // startup timing
 // using 66MHZ clock
@@ -63,9 +58,11 @@ wire LOAD_MODE = 		COUNTER[13:0] == 'd6900;
 
 localparam [3:0] STATE_IDLE = 'd0;
 localparam [3:0] STATE_REFRESH = 'd1;
-localparam [3:0] STATE_RW = 'd2;
-localparam [3:0] STATE_READ_WAIT = 'd3;
-localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd4;
+localparam [3:0] STATE_WRITE = 'd2;
+localparam [3:0] STATE_READ = 'd3;
+localparam [3:0] STATE_READ_WAIT = 'd4;
+localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd5;
+
 
 reg [3:0] state=0;
 reg [2:0] access_wait = 3'd0;
@@ -76,8 +73,7 @@ reg CKE_IN = 1'b1;
 FDCP refresh_ff( .D( 1'b0 ), .C( ~REFRESH ), .CLR(1'b0), .PRE( state == STATE_REFRESH ), .Q( refresh_req ) );
 
 // indicate refresh needed and do initialisation
-always @(posedge CLK or negedge RST)  begin
-
+always @(negedge CLK or negedge RST)  begin
 	if (RST == 1'b0) begin 
 		COUNTER 	<= 'd0;
 		READY_IN		<= 'b1;
@@ -116,6 +112,11 @@ end
 wire [12:0] CAS_MA = { 5'b00100, A[8:1] }; //  auto-precharge
 
 always @(posedge CLK)  begin
+	AS_IN <= AS;
+	DS_IN <= AS_IN | ( UDS_IN & LDS_IN ); // when I use UDS_IN here, blitter artefacting gets worse. Interesting.
+	UDS_IN <= UDS;
+	LDS_IN <= LDS;
+	RW_IN <= RW;
 
 	if( READY_IN ) begin
 		CMD <= SETUP_CMD;
@@ -136,11 +137,11 @@ always @(posedge CLK)  begin
 					CMD <= CMD_NOP;  
 					CKE_IN <= 1'b1;
 				end
-				else if( ~ACTIVE ) begin  // is there a read or write request?
+				else if( ~AS_IN ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;
 					access_wait <= 'd7;
 					MAIN_MA <= { 1'b0, A[20:9] };
-					state <= STATE_RW;
+					state <= RW_IN ? STATE_READ : STATE_WRITE;
 					CKE_IN <= 1'b1; 
 				end
 				else begin  // otherwise stay idle
@@ -149,16 +150,28 @@ always @(posedge CLK)  begin
 					CKE_IN <= 1'b1;
 				end
 			end
-			STATE_RW: begin
-				CMD <= RW_IN ? CMD_READ : CMD_WRITE;
+			STATE_WRITE: begin
+				if( DS_IN ) begin
+					CMD <= CMD_NOP;
+					state <= STATE_WRITE;
+				end
+				else begin
+					CMD <= CMD_WRITE;
+					state <= STATE_ACCESS_WAIT_NOP;
+				end
 				MAIN_MA <= CAS_MA;
-				state <= RW_IN ? STATE_READ_WAIT : STATE_ACCESS_WAIT_NOP;
+				CKE_IN <= 1'b1; 
+			end
+			STATE_READ: begin
+				CMD <= CMD_READ;
+				MAIN_MA <= CAS_MA;
+				state <= STATE_READ_WAIT;
 				CKE_IN <= 1'b1; 
 			end
 			STATE_READ_WAIT: begin
 				CMD <= CMD_NOP;
 				MAIN_MA <= CAS_MA;
-				state <= ACTIVE ? STATE_ACCESS_WAIT_NOP : STATE_READ_WAIT;
+				state <= DS_IN ? STATE_ACCESS_WAIT_NOP : STATE_READ_WAIT;
 				CKE_IN <= 1'b0; // suspend next clock
 			end
 			STATE_REFRESH: begin
@@ -181,18 +194,18 @@ always @(posedge CLK)  begin
 			end		
 		endcase
 
-		DQM_IN <= ACTIVE ? 2'b11 : { UDS_IN, LDS_IN };
+		DQM_IN <= DS_IN ? 2'b11 : { UDS_IN, LDS_IN };
 		BA_IN <= A[22:21];
 	end
 end
 
 localparam trl = 4;  // total read latency is the SDRAM CAS-latency (two) plus the SDRAM controller induced latency (two)
 reg [trl-1:0] RdDataValidPipe;  
-always @(posedge CLK) begin
-	if( ACTIVE )
+always @(negedge CLK) begin
+	if( AS_IN )
 		RdDataValidPipe <= 'd0;
 	else
-		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], state == STATE_RW  };
+		RdDataValidPipe <= {RdDataValidPipe[trl-2:0], (CMD == CMD_READ | CMD == CMD_WRITE) };
 
 end
 
@@ -210,7 +223,7 @@ wire valid_trigger = RW ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
 //wire valid;
 // this is the technically correct one -- only assert DTACK when data is genuinely on the bus
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( ACTIVE ), .Q( valid ) );
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( DS_IN ), .Q( valid ) );
 
 // these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	
