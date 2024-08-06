@@ -4,6 +4,9 @@
 /* Copyright 2022 D Henderson 						*/
 /* Released under the terms of the GPLv2 	*/
 
+/* I could potentially make things faster by skipping the 8 cycle count if accessing different banks.
+	eg. move the bank select down to the LSBs again and reset teh cycle count on bank change. */
+
 module nouveau_sdram(
 	input CLK,
 	input RST,
@@ -67,6 +70,7 @@ localparam [3:0] STATE_ACCESS_WAIT_NOP = 'd5;
 reg [3:0] state=0;
 reg [2:0] access_wait = 3'd0;
 reg [1:0] BA_IN;
+reg [2:0] BA_OLD; // record the last cycle ( refresh + bank )
 reg [1:0] DQM_IN;
 reg CKE_IN = 1'b1;
 
@@ -109,7 +113,7 @@ always @(negedge CLK or negedge RST)  begin
 	end	
 end
 
-wire [12:0] CAS_MA = { 5'b00100, A[8:1] }; //  auto-precharge
+wire [12:0] CAS_MA = { 5'b00100, A[22:15] }; //  auto-precharge
 
 always @(posedge CLK)  begin
 	AS_IN <= AS;
@@ -140,7 +144,7 @@ always @(posedge CLK)  begin
 				else if( ~AS_IN ) begin  // is there a read or write request?
 					CMD <= CMD_ACTIVE;
 					access_wait <= 'd7;
-					MAIN_MA <= { 1'b0, A[20:9] };
+					MAIN_MA <= { 1'b0, A[14:3] };
 					state <= RW_IN ? STATE_READ : STATE_WRITE;
 					CKE_IN <= 1'b1; 
 				end
@@ -177,14 +181,22 @@ always @(posedge CLK)  begin
 			STATE_REFRESH: begin
 				CMD <= CMD_REFRESH;
 				MAIN_MA[10] 	<= 1'b1;      // precharge all banks
-				access_wait <= 3'b111;
+				access_wait <= 'd7;
 				state <= STATE_ACCESS_WAIT_NOP;
 				CKE_IN <= 1'b1;
+				BA_OLD[2] <= 1'b1;
 			end
 			STATE_ACCESS_WAIT_NOP: begin
 				CMD <= CMD_NOP;
 				MAIN_MA <= CAS_MA;
-				state <= access_wait ? STATE_ACCESS_WAIT_NOP : STATE_IDLE;
+			
+				if( ( BA_OLD[2] == 1'b0 && BA_OLD[1:0] != BA_IN ) || !access_wait ) begin
+					state <= STATE_IDLE;
+					BA_OLD <= { 1'b0, BA_IN };	
+				end
+				else begin
+					state <= STATE_ACCESS_WAIT_NOP;
+				end
 				CKE_IN <= 1'b1;
 			end
 			default: begin
@@ -195,7 +207,7 @@ always @(posedge CLK)  begin
 		endcase
 
 		DQM_IN <= DS_IN ? 2'b11 : { UDS_IN, LDS_IN };
-		BA_IN <= A[22:21];
+		BA_IN <= A[2:1];
 	end
 end
 
@@ -222,12 +234,12 @@ assign CKE = CKE_IN;
 wire valid_trigger = RW ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
 //wire valid;
 // this is the technically correct one -- only assert DTACK when data is genuinely on the bus
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( ACTIVE ), .Q( valid ) );
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( DS_IN ), .Q( valid ) );
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( DS_IN ), .Q( valid ) );
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( DS_IN ), .Q( valid ) );
 
 // these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( ACTIVE ), .Q( valid ) );	
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( ACTIVE ), .Q( valid ) );	
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( DS_IN ), .Q( valid ) );	
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( DS_IN ), .Q( valid ) );	
 
 assign VALID = READY_IN | valid;
 assign READY = READY_IN;
