@@ -94,27 +94,25 @@ wire AS_COMBINED = AS_INT & AS_EXT;
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
-reg ALLOWFAST = 1'b1;
+reg ALLOWFAST = 1'b0;
 
 always @( negedge AS_INT or negedge RST_IN ) begin
 	if( ~RST_IN ) begin
 		reg_dtack <= 1'b1;
 		ENABLE <= 1'b1;
-//		ROM_DECODE <= 1'b1;
 	end
 	else begin
-		if( A[23:4] == 20'hFFFE0 ) begin
-//		if( A[23:4] == 20'hFFFE1 ) begin
-			if( A[3:1] == 3'h7 ) begin // fffe0e
+		if( A[23:4] == 20'hFFFE1 ) begin // 0xFFFE1x
+			if( A[3:1] == 3'h7 ) begin // fffe1e -- altrom enable
 				ROM_DECODE <= 1'b0;
 				reg_dtack <= 1'b0;
 			end
-			else if(  A[3:1] == 3'h6 ) begin // fffe0c
-				ALLOWFAST <= 1'b1;
+			else if(  A[3:1] == 3'h6 ) begin // fffe1c -- fast
+				ALLOWFAST <= 1'b0;
 				reg_dtack <= 1'b0;
 			end
-			else if(  A[3:1] == 3'h5 ) begin // fffe0a
-				ALLOWFAST <= 1'b0;
+			else if(  A[3:1] == 3'h5 ) begin // fffe1a -- slow
+				ALLOWFAST <= 1'b1;
 				reg_dtack <= 1'b0;
 			end
 			else			begin
@@ -193,7 +191,7 @@ nouveau_sdram sdram(
 
 
 /* clock switching */
-wire SLOW = ALLOWFAST ? BGO & BGK_IN & psg & ( AS_INT | ~sdram_access ) : 1'b0;
+wire SLOW = ALLOWFAST ? 1'b0 : BGO & BGK_IN & psg & ( AS_INT | ~sdram_access );
 
 `ifdef OLDCLK
 /*
