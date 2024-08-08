@@ -15,7 +15,7 @@ module altram_68k (
 
 	input BGK,
 	input RST,
-	input BERR,
+	inout BERR,
 
 	input CLKOSC,
 	input CLK8,
@@ -91,6 +91,9 @@ wire AS_COMBINED = AS_INT & AS_EXT;
 
 
 
+
+
+
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
@@ -137,10 +140,10 @@ wire ramwe;
 wire cke;
 wire ready;
 
-wire altram_access = ENABLE | AS_COMBINED | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
-wire altrom_access = ROM_DECODE | AS_INT | ( A[23:20] != 4'he & A[23:3] != 'd0 );
+wire altram_access = ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
 wire psg = AS_INT | ( A[23:8] != 16'hFF88 );
-wire sdram_access = ( altram_access & altrom_access );
+wire sdram_access = ENABLE | AS_INT | ( altram_access & altrom_access );
 wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 
@@ -217,10 +220,9 @@ always @( negedge CLKOSC ) begin
 end
 `endif
 
-
-
 /* assignments */
-assign DTACK = (BGK_IN | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
+assign DTACK = (BGK_IN | (/*sdram_valid & blit_dtack*/ & dtack_tos206) )  ? 1'bz : 1'b0;
+assign BERR = BGK_IN | altram_access | AS_EXT ? 1'bz : 1'b0 ;
 
 assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
 assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
@@ -239,7 +241,7 @@ assign RAMWE = ramwe;
 assign CAS = cas;
 assign RAS = ras;
 
-assign BOE = 1'b0;//sdram_access;
+assign BOE = sdram_access;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
