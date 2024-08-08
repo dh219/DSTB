@@ -115,9 +115,10 @@ end
 
 wire [12:0] CAS_MA = { 5'b00100, A[22:15] }; //  auto-precharge
 
+
 always @(posedge CLK)  begin
 	AS_IN <= AS;
-	DS_IN <= AS_IN | ( UDS_IN & LDS_IN ); // when I use UDS_IN here, blitter artefacting gets worse. Interesting.
+	DS_IN <= AS_IN | ( UDS_IN & LDS_IN );
 	UDS_IN <= UDS;
 	LDS_IN <= LDS;
 	RW_IN <= RW;
@@ -184,15 +185,14 @@ always @(posedge CLK)  begin
 				access_wait <= 'd7;
 				state <= STATE_ACCESS_WAIT_NOP;
 				CKE_IN <= 1'b1;
-				BA_OLD[2] <= 1'b1;
+				BA_OLD[2] <= 1'b0;
 			end
 			STATE_ACCESS_WAIT_NOP: begin
 				CMD <= CMD_NOP;
 				MAIN_MA <= CAS_MA;
-			
-				if( ( BA_OLD[2] == 1'b0 && BA_OLD[1:0] != BA_IN ) || !access_wait ) begin
+				if( ( BA_OLD[2] && BA_OLD[1:0] != BA_IN ) || !access_wait ) begin
 					state <= STATE_IDLE;
-					BA_OLD <= { 1'b0, BA_IN };	
+					BA_OLD <= { 1'b1, BA_IN };	
 				end
 				else begin
 					state <= STATE_ACCESS_WAIT_NOP;
@@ -231,15 +231,15 @@ assign CKE = CKE_IN;
 
 /* fix these next */
 
-wire valid_trigger = RW ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
+wire valid_trigger = RW_IN ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
 //wire valid;
 // this is the technically correct one -- only assert DTACK when data is genuinely on the bus
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( RdDataValidPipe[trl-1] ), .PRE( DS_IN ), .Q( valid ) );
-//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( DS_IN ), .Q( valid ) );
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( valid_trigger ), .PRE( DS_IN ), .Q( valid ) );
 
 // these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( DS_IN ), .Q( valid ) );	
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( DS_IN ), .Q( valid ) );	
+//FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( DS_IN ), .Q( valid ) );	
 
 assign VALID = READY_IN | valid;
 assign READY = READY_IN;

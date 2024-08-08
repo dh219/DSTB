@@ -43,13 +43,9 @@ module altram_68k (
 	output LED
  );
 
-wire AS_COMBINED = BGK ? AS_INT : AS;
 wire BGI;
 wire BGO;
 
-reg RESET_IN = 1'b0;
-always @( posedge RST )
-	RESET_IN <= 1'b1; // latch after first
 
 reg CLKOSC_2 = 1'b1;
 reg CLKOSC_4 = 1'b1;
@@ -59,7 +55,7 @@ always @(posedge CLKOSC ) begin
 	CLKOSC_2 <= ~CLKOSC_2;
 end
 
-reg ALLOWFAST = 1'b1;
+
 
 // 4 seems close to ideal with old switching
 // 3 closer with SJL switching
@@ -71,16 +67,37 @@ end
 // synthesized 8MHz system clock
 wire CLK8_SYN = CLK_D[shift-1];
 
-wire BGK_IN;
-FDCP bgk_ff( .D( 1'b1 ), .C( 1'b1 ), .CLR( ~BGK ), .PRE( AS_COMBINED & BGK ), .Q( BGK_IN ) );
 
-/* RAM */
+
+reg [2:0] BGK_D;
+reg [2:0] RST_D;
+reg [2:0] AS_D;
+always @( negedge CLKOSC ) begin
+	BGK_D <= { BGK_D[1:0], BGK };
+	RST_D <= { RST_D[1:0], RST };
+	AS_D <= { AS_D[1:0], AS };
+end
+wire BGK_IN = BGK_D[2];
+wire RST_IN = RST_D[2];
+wire AS_EXT = BGK_IN | AS_D[2];
+
+/*
+reg AS_EXT;
+always @(posedge CLK8_SYN) begin
+	AS_EXT <= BGK_IN ? 1'b1 : AS; // AS_EXT should only assert at S3 (half cycle delay for blitter)
+end
+*/
+wire AS_COMBINED = AS_INT & AS_EXT;
+
+
+
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
+reg ALLOWFAST = 1'b1;
 
-always @( negedge AS_INT or negedge RST ) begin
-	if( ~RST ) begin
+always @( negedge AS_INT or negedge RST_IN ) begin
+	if( ~RST_IN ) begin
 		reg_dtack <= 1'b1;
 		ENABLE <= 1'b1;
 //		ROM_DECODE <= 1'b1;
@@ -122,17 +139,20 @@ wire ramwe;
 wire cke;
 wire ready;
 
-wire altram_access =  ENABLE | AS_COMBINED | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire altram_access = ENABLE | AS_COMBINED | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire altrom_access = ROM_DECODE | AS_INT | ( A[23:20] != 4'he & A[23:3] != 'd0 );
-wire sdram_access =  ( altram_access & altrom_access );
+wire psg = AS_INT | ( A[23:8] != 16'hFF88 );
+wire sdram_access = ( altram_access & altrom_access );
 wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
-reg PSG = 1'b1;
-always @( negedge AS_INT ) begin
-	PSG <= ( A[23:8] != 16'hFF88 );
-end
 
 wire TOS206 = altrom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
+reg dtack_tos206;
+always @( posedge CLK8_SYN ) begin	// should be at least a half cycle delay AS->DTACK
+	dtack_tos206 <= TOS206;
+end
+
+/*
 reg [1:0] dtack_tos206 = 1'b1;
 always @( negedge CLKOSC_2 ) begin
 	if( AS_COMBINED )
@@ -140,25 +160,24 @@ always @( negedge CLKOSC_2 ) begin
 	else
 		dtack_tos206 <= {dtack_tos206[0],TOS206};
 end
-
+*/
+/*
 reg [3:0] AS_BGK_D;
 always @( posedge CLKOSC ) begin
 	AS_BGK_D[3:0] <= { AS_BGK_D[2:0], BGK ? 1'b1 : AS };
 end
-
+*/
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
-//	.RST(RST_IN),
-	.RST(RST),
+	.RST(RST_IN),
 	
-	.AS( BGK | ~RW ? sdram_access : sdram_access | AS_BGK_D[3] ), // this is a really shonky test to delay blitter reads whilst making writes as fast as possible
+	.AS( sdram_access ),
 	.UDS(UDS),
 	.LDS(LDS),
 	.RW(RW),
 	
 	.A( { REWRITE_A2320, A[19:1] } ),
-//	.A( A[23:1] ),
 	.VALID(sdram_valid),
 
 	.MA(ma),
@@ -171,25 +190,17 @@ nouveau_sdram sdram(
 	.CKE(cke),
 	.READY(ready)
 );
-/*
-reg [7:0] BGK_D = 'hff;
-always @( negedge AS_INT or negedge BGK ) begin
-	if( ~BGK )
-		BGK_D <= 'd0;
-	else
-		BGK_D <= { BGK_D[6:0], 1'b1 };
-end
-*/
 
-wire SLOW = ALLOWFAST ? BGO & BGK_IN & PSG & ( AS_INT | ~sdram_access ) : 1'b0;
+
+/* clock switching */
+wire SLOW = ALLOWFAST ? BGO & BGK_IN & psg & ( AS_INT | ~sdram_access ) : 1'b0;
 
 `ifdef OLDCLK
 /*
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
-//	.clk1( ~CLK8 ),
-	.clk1( ~CLK_D[shift-1] ),
+	.clk1( ~CLK8_SYN ),
 	.select( SLOW ), // high = clk0
 	.active0( FASTACTIVE ),
 	.active1( SLOWACTIVE ),
@@ -208,16 +219,16 @@ always @( negedge CLKOSC ) begin
 end
 `endif
 
-/* assignments */
-assign DTACK = (BGK_IN| (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 
-wire newas = sdram_access ? AS_INT : 1'b1;
-assign AS = BGK_IN ? newas : 1'bz;
+
+/* assignments */
+assign DTACK = (BGK_IN | (sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
+
+assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
 assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
 
 assign RAMCLK = CLKOSC;
 assign CLKOUT = ~CLK_OUT_INT;
-//assign CLKOUT = CLK_D[shift-1];
 
 assign E = BGK_IN ? E_INT : 1'bz;
 assign VMA = BGK_IN ? VMA_INT : 1'bz;
@@ -230,10 +241,7 @@ assign RAMWE = ramwe;
 assign CAS = cas;
 assign RAS = ras;
 
-reg boe;
-always @( negedge CLKOUT )
-	boe <= sdram_access;
-assign BOE = boe;
+assign BOE = 1'b0;//sdram_access;
 
 //wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
