@@ -238,7 +238,7 @@ wire valid_trigger = RW_IN ? RdDataValidPipe[trl-1] : RdDataValidPipe[0];
 
 // these rely on the fact the sdram controller reacts quicker than the 68k. Use with measured caution.
 //FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( state == STATE_READ ), .PRE( DS_IN ), .Q( valid ) );	
-FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( DS_IN ), .Q( valid ) );	
+FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( AS_IN ), .Q( valid ) );	
 
 // perhaps just assume can assert at next rising CLK8 edge unless a refresh is active?
 
