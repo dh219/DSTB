@@ -24,8 +24,7 @@ module nouveau_sdram(
 	output RAMWE,
 	output CKE,
 
-	output VALID,
-	output READY
+	output VALID
 );
 
 localparam [2:0] CMD_LOADMODE  = 3'b000;
@@ -243,5 +242,4 @@ FDCP valid_latch( .D(1'b0), .C( 1'b0), .CLR( CMD == CMD_ACTIVE ), .PRE( AS_IN ),
 // perhaps just assume can assert at next rising CLK8 edge unless a refresh is active?
 
 assign VALID = READY_IN | valid;
-assign READY = READY_IN;
 endmodule

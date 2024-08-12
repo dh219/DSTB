@@ -138,7 +138,7 @@ wire ras;
 wire cas;
 wire ramwe;
 wire cke;
-wire ready;
+wire sdram_valid;
 
 wire altram_access = ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
@@ -188,8 +188,7 @@ nouveau_sdram sdram(
 	.RAS(ras),
 	.CAS(cas),
 	.RAMWE(ramwe),
-	.CKE(cke),
-	.READY(ready)
+	.CKE(cke)
 );
 
 
@@ -221,7 +220,7 @@ end
 `endif
 
 /* assignments */
-assign DTACK = (BGK_IN | (/*sdram_valid & blit_dtack*/ & dtack_tos206) )  ? 1'bz : 1'b0;
+assign DTACK = (BGK_IN | (/*sdram_valid & */dtack_tos206) )  ? 1'bz : 1'b0;
 assign BERR = BGK_IN | altram_access | AS_EXT ? 1'bz : 1'b0 ;
 
 assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
@@ -242,8 +241,6 @@ assign CAS = cas;
 assign RAS = ras;
 
 assign BOE = sdram_access;
-
-//wire screen = ~RW & ~AS_INT & A[23:1] == 23'h7FC101; // upper 23 bits of the mid screen address register
 
 reg BGO_IN = 1'b1;
 always @( negedge CLKOSC or posedge BGI ) begin
