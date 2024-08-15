@@ -93,7 +93,7 @@ wire AS_COMBINED = AS_INT & AS_EXT;
 
 
 
-
+reg COLD = 1'b0; // initalise to zero
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
@@ -110,6 +110,10 @@ always @( negedge AS_INT or negedge RST_IN ) begin
 				ROM_DECODE <= 1'b0;
 				reg_dtack <= 1'b0;
 			end
+			else if(  A[3:1] == 3'h4 ) begin // fffe18 -- altrom check
+				if( ~ROM_DECODE )
+				reg_dtack <= 1'b0;
+			end
 			else if(  A[3:1] == 3'h6 ) begin // fffe1c -- fast
 				ALLOWFAST <= 1'b0;
 				reg_dtack <= 1'b0;
@@ -120,6 +124,7 @@ always @( negedge AS_INT or negedge RST_IN ) begin
 			end
 			else			begin
 				ENABLE <= 1'b0;
+				COLD <= 1'b1;
 				reg_dtack <= 1'b0;
 			end
 		end
@@ -140,10 +145,10 @@ wire ramwe;
 wire cke;
 wire sdram_valid;
 
-wire altram_access = ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
+wire altram_access = ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
 wire psg = AS_INT | ( A[23:8] != 16'hFF88 );
-wire sdram_access = ENABLE | AS_INT | ( altram_access & altrom_access );
+wire sdram_access =  AS_INT | ( altram_access & altrom_access );
 wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 
@@ -171,7 +176,7 @@ end
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
-	.RST(RST_IN),
+	.RST( RST_IN | COLD ),
 	
 	.AS( sdram_access ),
 	.UDS(UDS),
