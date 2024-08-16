@@ -20,7 +20,8 @@ module altram_68k (
 	input CLKOSC,
 	input CLK8,
 	output CLKOUT,
-	output RAMCLK,
+//	output RAMCLK,
+	input CLKOSC_OLD,
 
 	inout E,
 	input E_INT,
@@ -45,6 +46,7 @@ module altram_68k (
 
 wire BGI;
 wire BGO;
+wire RAMCLK;
 
 
 reg CLKOSC_2 = 1'b1;
