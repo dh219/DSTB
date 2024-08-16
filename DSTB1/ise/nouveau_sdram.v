@@ -46,6 +46,7 @@ reg [12:0] SETUP_MA;
 reg [12:0] MAIN_MA;
 
 reg AS_IN;
+reg AS_IN_D;
 reg DS_IN;
 reg UDS_IN;
 reg LDS_IN;
@@ -114,14 +115,17 @@ end
 
 wire [12:0] CAS_MA = { 5'b00100, A[22:15] }; //  auto-precharge
 
-
+reg newreq = 1'b1;
 always @(posedge CLK)  begin
 	AS_IN <= AS;
+	AS_IN_D <= AS_IN;
 	DS_IN <= AS_IN | ( UDS_IN & LDS_IN );
 	UDS_IN <= UDS;
 	LDS_IN <= LDS;
 	RW_IN <= RW;
-
+	if( AS_IN )
+		newreq <= 1'b1;
+		
 	if( READY_IN ) begin
 		CMD <= SETUP_CMD;
 		MAIN_MA <= SETUP_MA;
@@ -130,6 +134,8 @@ always @(posedge CLK)  begin
 		CKE_IN <= 1'b1;
 	end
 	else begin
+		if( ~AS_IN && AS_IN_D )
+			newreq <= 1'b0;
 
 		if( CKE_IN && access_wait )
 			access_wait <= access_wait - 'd1;
@@ -141,7 +147,8 @@ always @(posedge CLK)  begin
 					CMD <= CMD_NOP;  
 					CKE_IN <= 1'b1;
 				end
-				else if( ~AS_IN ) begin  // is there a read or write request?
+				else if( ~newreq ) begin  // is there a read or write request?
+					newreq <= 1'b1;
 					CMD <= CMD_ACTIVE;
 					access_wait <= 'd7;
 					MAIN_MA <= { 1'b0, A[14:3] };

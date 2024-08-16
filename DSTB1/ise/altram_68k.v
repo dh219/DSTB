@@ -150,7 +150,7 @@ wire sdram_valid;
 wire altram_access = ENABLE | ( A[23:22] != 2'b01 && A[23:22] != 2'b10 );
 wire altrom_access = ROM_DECODE | ( A[23:20] != 4'he & A[23:3] != 'd0 );
 wire psg = AS_INT | ( A[23:8] != 16'hFF88 );
-wire sdram_access =  AS_INT | ( altram_access & altrom_access );
+wire sdram_access =  AS_COMBINED | ( altram_access & altrom_access );
 wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 
@@ -227,8 +227,8 @@ end
 `endif
 
 /* assignments */
-assign DTACK = (BGK_IN | (/*sdram_valid & */dtack_tos206) )  ? 1'bz : 1'b0;
-assign BERR = BGK_IN | altram_access | AS_EXT ? 1'bz : 1'b0 ;
+assign DTACK = (BGK_IN | ( sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
+assign BERR = 1'bz;//BGK_IN | altram_access | AS_EXT ? 1'bz : 1'b0 ;
 
 assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
 assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
