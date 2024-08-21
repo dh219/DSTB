@@ -99,7 +99,7 @@ reg COLD = 1'b0; // initalise to zero
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
-reg ALLOWFAST = 1'b0;
+reg ALLOWFAST = 1'b1; // default to no
 
 always @( negedge AS_INT or negedge RST_IN ) begin
 	if( ~RST_IN ) begin
@@ -156,7 +156,7 @@ wire [3:0] REWRITE_A2320 = altrom_access ? A[23:20] : 4'hB;
 
 wire TOS206 = altrom_access ? AS_COMBINED | ( ( A[23:20] != 4'he ) & ( A[23:3] != 21'h0 ) ) : 1'b1;
 reg dtack_tos206;
-always @( posedge CLK8_SYN ) begin	// should be at least a half cycle delay AS->DTACK
+always @( posedge CLKOUT ) begin	// should be at least a half cycle delay AS->DTACK
 	dtack_tos206 <= TOS206;
 end
 
@@ -253,12 +253,10 @@ reg BGO_IN = 1'b1;
 always @( negedge CLKOSC or posedge BGI ) begin
 	if( BGI )
 		BGO_IN <= 1'b1;
-	else begin
-		if( AS_INT )
-			BGO_IN <= 1'b0;
-		else
-			BGO_IN <= BGO_IN;
-	end
+	else if( AS_INT | sdram_access )
+		BGO_IN <= 1'b0;
+	else
+		BGO_IN <= BGO_IN;
 end
 
 assign BGI = TP[5];
