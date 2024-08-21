@@ -67,7 +67,7 @@
 					(end 17.78 -57.15)
 					(stroke
 						(width 0.254)
-						(type default)
+						(type solid)
 					)
 					(fill
 						(type background)
@@ -5245,7 +5245,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "DIP* SOIC* R*Array*Concave* R*Array*Convex*"
+			(property "ki_fp_filters" "DIP* SOIC* R*Array*Concave* R*Array*Convex* MSOP*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -7004,7 +7004,16 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC"
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description_1" "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC"
 				(at 21.59 -2.54 0)
 				(effects
 					(font
@@ -7453,7 +7462,7 @@
 					)
 					(stroke
 						(width 0.1524)
-						(type default)
+						(type solid)
 					)
 					(fill
 						(type none)
@@ -21502,7 +21511,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 279.4 128.27 0)
 			(effects
 				(font
@@ -21657,6 +21666,16 @@
 				(font
 					(size 1.27 1.27)
 				)
+				(hide yes)
+			)
+		)
+		(property "Description_1" "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC"
+			(at 367.03 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -21863,6 +21882,16 @@
 				(hide yes)
 			)
 		)
+		(property "Description_1" "Texas Instruments SN74CB3T3245DW, Bus Switch, 8 x 1:1, 2.3  3.6 V, 20-Pin SOIC"
+			(at 367.03 212.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2a6f1788-4085-46f0-b52c-f17004893961")
 		)
@@ -21977,7 +22006,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 312.42 193.04 0)
 			(effects
 				(font
@@ -22297,7 +22326,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "CPLD, 144 Macrocells, 3200 Usable Gates"
 			(at 189.23 207.01 0)
 			(effects
 				(font
@@ -22658,7 +22687,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "16/32-bit Microprocessor"
 			(at 81.28 215.9 0)
 			(effects
 				(font
@@ -22912,7 +22941,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 392.43 88.9 0)
 			(effects
 				(font
@@ -22998,7 +23027,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 392.43 71.12 0)
 			(effects
 				(font
@@ -23084,7 +23113,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 392.43 53.34 0)
 			(effects
 				(font
@@ -23170,7 +23199,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 392.43 35.56 0)
 			(effects
 				(font
@@ -23257,7 +23286,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 129.54 255.27 0)
 			(effects
 				(font
@@ -23325,7 +23354,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "700mA Micropower Low drop-out regulator, Fixed Output 3.3V, SOT-223"
 			(at 184.15 38.1 0)
 			(effects
 				(font
@@ -23397,7 +23426,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Crystal Clock Oscillator, SMD package 7.5x5.0mm²"
 			(at 180.34 90.17 0)
 			(effects
 				(font
@@ -23472,7 +23501,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Light emitting diode"
 			(at 257.81 213.36 0)
 			(effects
 				(font
@@ -23541,7 +23570,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 257.81 203.2 0)
 			(effects
 				(font
@@ -23610,7 +23639,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 238.76 142.24 0)
 			(effects
 				(font
@@ -23679,7 +23708,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 248.92 142.24 0)
 			(effects
 				(font
@@ -23748,7 +23777,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 198.12 41.91 0)
 			(effects
 				(font
@@ -23817,7 +23846,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 165.1 90.17 0)
 			(effects
 				(font
@@ -23886,7 +23915,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 30.48 152.4 0)
 			(effects
 				(font
@@ -23955,7 +23984,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 40.64 152.4 0)
 			(effects
 				(font
@@ -24022,7 +24051,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 86.36 0)
 			(effects
 				(font
@@ -24107,7 +24136,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 68.58 0)
 			(effects
 				(font
@@ -24192,7 +24221,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 50.8 0)
 			(effects
 				(font
@@ -24277,7 +24306,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 33.02 0)
 			(effects
 				(font
@@ -24362,7 +24391,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 121.92 0)
 			(effects
 				(font
@@ -24447,7 +24476,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4 resistor network, parallel topology"
 			(at 351.79 104.14 0)
 			(effects
 				(font
@@ -24534,7 +24563,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 378.46 157.48 0)
 			(effects
 				(font
@@ -24600,7 +24629,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 378.46 147.32 0)
 			(effects
 				(font
@@ -24734,7 +24763,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 378.46 142.24 0)
 			(effects
 				(font
@@ -24882,7 +24911,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 378.46 137.16 0)
 			(effects
 				(font
@@ -24948,7 +24977,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 378.46 152.4 0)
 			(effects
 				(font

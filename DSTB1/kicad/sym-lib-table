@@ -1,4 +1,6 @@
 (sym_lib_table
-  (lib (name 68000d_plug)(type Legacy)(uri ${KIPRJMOD}/68000d_plug.lib)(options "")(descr ""))
-  (lib (name SN74CB3T3245DW)(type Legacy)(uri ${KIPRJMOD}/SN74CB3T3245DW.lib)(options "")(descr ""))
+  (version 7)
+  (lib (name "68000d_plug")(type "Legacy")(uri "${KIPRJMOD}/68000d_plug.lib")(options "")(descr ""))
+  (lib (name "SN74CB3T3245DW")(type "Legacy")(uri "${KIPRJMOD}/SN74CB3T3245DW.lib")(options "")(descr ""))
+  (lib (name "IS42S16320D")(type "KiCad")(uri "${KIPRJMOD}/IS42S16320D.kicad_sym")(options "")(descr ""))
 )
