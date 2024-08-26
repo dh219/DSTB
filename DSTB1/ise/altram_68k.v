@@ -253,10 +253,10 @@ reg BGO_IN = 1'b1;
 always @( negedge CLKOSC or posedge BGI ) begin
 	if( BGI )
 		BGO_IN <= 1'b1;
-	else if( AS_INT | sdram_access )
-		BGO_IN <= 1'b0;
-	else
+	else if( ~AS_INT & AS_EXT ) // hold off if we're in a cycle that's hidden from the mobo
 		BGO_IN <= BGO_IN;
+	else
+		BGO_IN <= 1'b0;
 end
 
 assign BGI = TP[5];
