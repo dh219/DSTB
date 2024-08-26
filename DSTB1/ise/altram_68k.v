@@ -59,16 +59,6 @@ end
 
 
 
-// 4 seems close to ideal with old switching
-// 3 closer with SJL switching
-localparam shift = 3;  
-reg [shift-1:0] CLK_D = 'd0;
-always @( negedge CLKOSC ) begin
-	CLK_D <= { CLK_D[shift-2:0], ~CLK8 };
-end
-// synthesized 8MHz system clock
-wire CLK8_SYN = CLK_D[shift-1];
-
 
 
 reg [2:0] BGK_D;
@@ -83,12 +73,6 @@ wire BGK_IN = BGK_D[2];
 wire RST_IN = RST_D[2];
 wire AS_EXT = BGK_IN | AS_D[2];
 
-/*
-reg AS_EXT;
-always @(posedge CLK8_SYN) begin
-	AS_EXT <= BGK_IN ? 1'b1 : AS; // AS_EXT should only assert at S3 (half cycle delay for blitter)
-end
-*/
 wire AS_COMBINED = AS_INT & AS_EXT;
 
 
@@ -160,21 +144,6 @@ always @( posedge CLKOUT ) begin	// should be at least a half cycle delay AS->DT
 	dtack_tos206 <= TOS206;
 end
 
-/*
-reg [1:0] dtack_tos206 = 1'b1;
-always @( negedge CLKOSC_2 ) begin
-	if( AS_COMBINED )
-		dtack_tos206 <= 2'b11;
-	else
-		dtack_tos206 <= {dtack_tos206[0],TOS206};
-end
-*/
-/*
-reg [3:0] AS_BGK_D;
-always @( posedge CLKOSC ) begin
-	AS_BGK_D[3:0] <= { AS_BGK_D[2:0], BGK ? 1'b1 : AS };
-end
-*/
 
 nouveau_sdram sdram(
 	.CLK(RAMCLK),
@@ -202,19 +171,31 @@ nouveau_sdram sdram(
 /* clock switching */
 wire SLOW = ALLOWFAST ? 1'b0 : BGO & BGK_IN & psg & ( AS_INT | ~sdram_access );
 
+`define OLDCLK
 `ifdef OLDCLK
-/*
+
 wire CLK_OUT_INT;
 clockmux mod_clock ( 
 	.clk0( CLKOSC_4 ),
-	.clk1( ~CLK8_SYN ),
+	.clk1( ~CLK8 ),
 	.select( SLOW ), // high = clk0
 	.active0( FASTACTIVE ),
 	.active1( SLOWACTIVE ),
 	.out_clock( CLK_OUT_INT )
 );
-*/
+
 `else
+// 4 seems close to ideal with old switching
+// 3 closer with SJL switching
+localparam shift = 3;  
+reg [shift-1:0] CLK_D = 'd0;
+always @( negedge CLKOSC ) begin
+	CLK_D <= { CLK_D[shift-2:0], ~CLK8 };
+end
+// synthesized 8MHz system clock
+wire CLK8_SYN = CLK_D[shift-1];
+
+
 reg CLK_OUT_INT;
 always @( negedge CLKOSC ) begin
 	if( CLKOSC_2 ) begin
