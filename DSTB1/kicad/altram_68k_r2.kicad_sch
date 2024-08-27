@@ -5597,8 +5597,17 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "DRAM 512M (32Mx16) 143MHz SDR SDRAM, 3.3V"
-				(at 5.08 -91.44 0)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "MANUFACTURER_PART_NUMBER" "IS42S16320D-7TL"
+				(at 5.08 -86.36 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5607,8 +5616,8 @@
 					(hide yes)
 				)
 			)
-			(property "MANUFACTURER_PART_NUMBER" "IS42S16320D-7TL"
-				(at 5.08 -86.36 0)
+			(property "DESCRIPTION" "DRAM 512M (32Mx16) 143MHz SDR SDRAM, 3.3V"
+				(at 5.08 -91.44 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -11631,6 +11640,16 @@
 		)
 		(uuid "4ca99c8d-55f5-4b03-b0cd-e859f6d303df")
 	)
+	(wire
+		(pts
+			(xy 38.1 24.13) (xy 55.88 24.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4cb6b9a1-5ceb-4856-a376-ae24fc1d7631")
+	)
 	(bus
 		(pts
 			(xy 119.38 200.66) (xy 119.38 203.2)
@@ -16678,6 +16697,17 @@
 		)
 		(uuid "45c9b637-ec2d-43fd-a2ff-ff57a536eda5")
 	)
+	(label "CLK_ST"
+		(at 55.88 24.13 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "4699a60e-a519-4de9-83d3-cbea5db75b3f")
+	)
 	(label "A10"
 		(at 218.44 163.83 0)
 		(fields_autoplaced yes)
@@ -19265,7 +19295,7 @@
 	)
 	(global_label "CLK8"
 		(shape output)
-		(at 55.88 24.13 180)
+		(at 30.48 24.13 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -19275,7 +19305,7 @@
 		)
 		(uuid "54458637-f5ae-43df-9f51-895084ee270e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 48.7714 24.13 0)
+			(at 23.3714 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24993,6 +25023,74 @@
 			(project "altram_68k_r2"
 				(path "/c9a72e4c-f90e-4205-9d40-436bd9db8a4b"
 					(reference "TP4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 34.29 24.13 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "86a85fab-0620-4a28-8074-2187fd2876a4")
+		(property "Reference" "R4"
+			(at 34.29 18.9695 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10R"
+			(at 34.29 21.3938 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"
+			(at 34.29 25.908 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 34.29 24.13 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 34.29 24.13 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "e719c658-1f37-4374-a7c4-3e8335e6668f")
+		)
+		(pin "1"
+			(uuid "7abc94e8-98b6-4182-a7c5-e28f54b5f7be")
+		)
+		(instances
+			(project ""
+				(path "/c9a72e4c-f90e-4205-9d40-436bd9db8a4b"
+					(reference "R4")
 					(unit 1)
 				)
 			)

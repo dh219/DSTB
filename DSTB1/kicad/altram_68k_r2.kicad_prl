@@ -1,6 +1,6 @@
 {
   "board": {
-    "active_layer": 0,
+    "active_layer": 31,
     "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_netclasses": [],
@@ -80,27 +80,27 @@
   "project": {
     "files": [
       {
-        "name": "altram_68k_r2.kicad_pcb",
-        "open": false,
-        "window": {
-          "display": 0,
-          "maximized": false,
-          "pos_x": 172,
-          "pos_y": 31,
-          "size_x": 1372,
-          "size_y": 835
-        }
-      },
-      {
         "name": "altram_68k_r2.kicad_sch",
         "open": false,
         "window": {
           "display": 0,
           "maximized": false,
-          "pos_x": 55,
-          "pos_y": 74,
+          "pos_x": 0,
+          "pos_y": 64,
           "size_x": 1219,
-          "size_y": 686
+          "size_y": 737
+        }
+      },
+      {
+        "name": "altram_68k_r2.kicad_pcb",
+        "open": false,
+        "window": {
+          "display": 0,
+          "maximized": false,
+          "pos_x": 17,
+          "pos_y": 41,
+          "size_x": 1190,
+          "size_y": 829
         }
       }
     ]
