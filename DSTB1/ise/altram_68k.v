@@ -46,6 +46,7 @@ module altram_68k (
 
 wire BGI;
 wire BGO;
+wire HALT;
 wire RAMCLK;
 
 
@@ -64,13 +65,16 @@ end
 reg [2:0] BGK_D;
 reg [2:0] RST_D;
 reg [2:0] AS_D;
+reg [2:0] HALT_D;
 always @( negedge CLKOSC ) begin
 	BGK_D <= { BGK_D[1:0], BGK };
 	RST_D <= { RST_D[1:0], RST };
 	AS_D <= { AS_D[1:0], AS };
+	HALT_D <= { HALT_D[1:0], HALT };
 end
 wire BGK_IN = BGK_D[2];
 wire RST_IN = RST_D[2];
+wire HALT_IN = HALT_D[2];
 wire AS_EXT = BGK_IN | AS_D[2];
 
 wire AS_COMBINED = AS_INT & AS_EXT;
@@ -79,15 +83,15 @@ wire AS_COMBINED = AS_INT & AS_EXT;
 
 
 
-reg COLD = 1'b0; // initalise to zero
 reg ENABLE = 1'b1;
 reg reg_dtack = 1'b1;
 reg ROM_DECODE = 1'b1;
 reg ALLOWFAST = 1'b1; // default to no
+reg COLD = 1'b0; // default to cold asserted
 
 always @( negedge AS_INT or negedge RST_IN ) begin
+	reg_dtack <= 1'b1;
 	if( ~RST_IN ) begin
-		reg_dtack <= 1'b1;
 		ENABLE <= 1'b1;
 	end
 	else begin
@@ -98,7 +102,7 @@ always @( negedge AS_INT or negedge RST_IN ) begin
 			end
 			else if(  A[3:1] == 3'h4 ) begin // fffe18 -- altrom check
 				if( ~ROM_DECODE )
-				reg_dtack <= 1'b0;
+					reg_dtack <= 1'b0;
 			end
 			else if(  A[3:1] == 3'h6 ) begin // fffe1c -- fast
 				ALLOWFAST <= 1'b0;
@@ -110,12 +114,9 @@ always @( negedge AS_INT or negedge RST_IN ) begin
 			end
 			else			begin
 				ENABLE <= 1'b0;
-				COLD <= 1'b1;
 				reg_dtack <= 1'b0;
 			end
-		end
-		else begin
-			reg_dtack <= 1'b1;		
+			COLD <= 1'b1;	// any register access must make this non-cold
 		end
 	end
 end
@@ -243,11 +244,13 @@ end
 assign BGI = TP[5];
 assign BGO = BGO_IN;
 
+assign HALT = TP[2];
+
 wire video = ( ( A[23:1] != 'h7FC100 ) & ( A[23:1] != 'h7FC101 ) ) | AS_INT | RW; // FF8200 + 802 right shifted one. Address strobe valid and write.
 
 
 assign TP[1] = TOS206;
-assign TP[2] = ~video;
+assign TP[2] = 1'bz; // HALT
 assign TP[3] = CKE;
 assign TP[4] = BGO;
 assign TP[5] = 1'bz; //BGI;
