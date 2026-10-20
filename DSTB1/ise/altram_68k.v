@@ -246,8 +246,20 @@ assign BGO = BGO_IN;
 
 assign HALT = TP[2];
 
-wire video = ( ( A[23:1] != 'h7FC100 ) & ( A[23:1] != 'h7FC101 ) ) | AS_INT | RW; // FF8200 + 802 right shifted one. Address strobe valid and write.
+//wire video = ( ( A[23:1] != 'h7FC100 ) & ( A[23:1] != 'h7FC101 ) ) | AS_INT | RW; // FF8200 + 802 right shifted one. Address strobe valid and write.
 
+reg [21:0] counter = 'd0;
+reg pulse = 'd0;
+always @( posedge CLK8 ) begin
+	if( counter[21] ) begin
+		pulse <= ~pulse;
+		counter <= 'd0;
+	end
+	else if( SLOW )
+		counter <= counter + 'd1;
+	else
+		counter <= counter;
+end
 
 assign TP[1] = TOS206;
 assign TP[2] = 1'bz; // HALT
@@ -255,6 +267,6 @@ assign TP[3] = CKE;
 assign TP[4] = BGO;
 assign TP[5] = 1'bz; //BGI;
 
-assign LED = sdram_valid;
+assign LED = ( ALLOWFAST | pulse ) ^ !sdram_valid;
 
 endmodule
