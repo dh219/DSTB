@@ -261,7 +261,7 @@ always @( posedge CLK8 ) begin
 		counter <= counter;
 end
 
-assign TP[1] = TOS206;
+assign TP[1] = sdram_access ; // TOS206;
 assign TP[2] = 1'bz; // HALT
 assign TP[3] = CKE;
 assign TP[4] = BGO;
