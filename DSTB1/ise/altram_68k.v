@@ -72,12 +72,13 @@ always @( negedge CLKOSC ) begin
 	AS_D <= { AS_D[1:0], AS };
 	HALT_D <= { HALT_D[1:0], HALT };
 end
+
 wire BGK_IN = BGK_D[2];
 wire RST_IN = RST_D[2];
 wire HALT_IN = HALT_D[2];
 wire AS_EXT = BGK_IN | AS_D[2];
 
-wire AS_COMBINED = AS_INT & AS_EXT;
+wire AS_COMBINED = AS_INT ;//& AS_EXT;
 
 
 
@@ -212,7 +213,16 @@ end
 assign DTACK = (BGK_IN | ( sdram_valid & dtack_tos206) )  ? 1'bz : 1'b0;
 assign BERR = 1'bz;//BGK_IN | altram_access | AS_EXT ? 1'bz : 1'b0 ;
 
-assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
+//assign AS = BGK_IN ? (~sdram_access|AS_INT) : 1'bz;
+/*
+reg AS_INT_D;
+always @( posedge CLKOSC ) begin
+	AS_INT_D <= AS_INT;
+end
+assign AS = AS_INT ? ( AS_INT_D ? 1'bz : 1'b1 ) : 1'b0;
+*/
+assign AS = BGK_IN ? AS_INT : 1'bz;
+
 assign DTACK_INT = (~sdram_access|DTACK) & reg_dtack & sdram_valid & dtack_tos206;
 
 assign RAMCLK = CLKOSC;
@@ -229,7 +239,7 @@ assign RAMWE = ramwe;
 assign CAS = cas;
 assign RAS = ras;
 
-assign BOE = sdram_access;
+assign BOE = !BGK | sdram_access;
 
 reg BGO_IN = 1'b1;
 always @( negedge CLKOSC or posedge BGI ) begin
@@ -261,7 +271,7 @@ always @( posedge CLK8 ) begin
 		counter <= counter;
 end
 
-assign TP[1] = sdram_access ; // TOS206;
+assign TP[1] = !BOE ; // TOS206;
 assign TP[2] = 1'bz; // HALT
 assign TP[3] = CKE;
 assign TP[4] = BGO;
