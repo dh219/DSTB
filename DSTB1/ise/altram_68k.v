@@ -5,7 +5,7 @@
 /* Released under the terms of the GPLv2 	*/
 
 module altram_68k (
-	input AS_INT,
+	input ASI,
 	inout AS,
 	input RW,
 	input UDS,
@@ -66,21 +66,21 @@ reg [2:0] BGK_D;
 reg [2:0] RST_D;
 reg [2:0] AS_D;
 reg [2:0] HALT_D;
+reg [2:0] ASI_D;
 always @( negedge CLKOSC ) begin
 	BGK_D <= { BGK_D[1:0], BGK };
 	RST_D <= { RST_D[1:0], RST };
 	AS_D <= { AS_D[1:0], AS };
 	HALT_D <= { HALT_D[1:0], HALT };
+	ASI_D <= { ASI_D[1:0], ASI };
 end
 wire BGK_IN = BGK_D[2];
 wire RST_IN = RST_D[2];
 wire HALT_IN = HALT_D[2];
 wire AS_EXT = BGK_IN | AS_D[2];
+wire AS_INT = ASI_D[2];
 
 wire AS_COMBINED = AS_INT & AS_EXT;
-
-
-
 
 
 reg ENABLE = 1'b1;
@@ -170,7 +170,7 @@ nouveau_sdram sdram(
 
 
 /* clock switching */
-wire SLOW = ALLOWFAST ? 1'b0 : BGO & BGK_IN & psg & ( AS_INT | ~sdram_access );
+wire SLOW = ALLOWFAST ? 1'b0 : BGO & BGK_IN & psg & ( ASI | ~sdram_access );
 
 `define OLDCLK
 `ifdef OLDCLK
